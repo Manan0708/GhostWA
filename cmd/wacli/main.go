@@ -1,14 +1,21 @@
 // Package main is the program entry point.
 //
-// In Go, every executable program must:
-//   1. live in package main
-//   2. define a function named main with no arguments and no return value
-//
-// `go run ./cmd/wacli` compiles this package and then runs it.
+// It does almost nothing: collect arguments, call the CLI, then exit
+// with the code the CLI returned.
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/Manan0708/wacli/internal/cli"
+)
 
 func main() {
-	fmt.Println("WACLI")
+	// os.Args[0] is the program path (e.g. "wacli.exe").
+	// os.Args[1:] is the slice of arguments the user typed after the command.
+	//
+	// os.Exit ends the process with an exit code. Unlike returning from main
+	// (always treated as 0), this lets us report failure to the shell.
+	code := cli.Run(os.Args[1:], os.Stdout, os.Stderr)
+	os.Exit(code)
 }
