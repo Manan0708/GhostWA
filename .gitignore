@@ -1,0 +1,12 @@
+# Binaries
+/wacli
+/wacli.exe
+*.exe
+
+# Sensitive WhatsApp / app data (never commit)
+session.db
+messages.db
+media/
+.env
+credentials
+*.db
