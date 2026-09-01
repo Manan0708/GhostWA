@@ -259,7 +259,7 @@ func (m showModel) View() string {
 		Foreground(lipgloss.Color("#FFFFFF")).
 		Background(purpleBg).
 		Padding(0, 2).
-		Render("⚡ GHOSTWA v2.5")
+		Render("⚡ GHOSTWA v2.5.1")
 
 	daemonBadge := lipgloss.NewStyle().
 		Bold(true).

@@ -14,7 +14,7 @@ import (
 
 // runLogin handles the "login" command with support for QR code or Phone Pairing Code.
 func runLogin(args []string, stdout, stderr io.Writer) int {
-	fmt.Fprintln(stdout, "GhostWA v2.5 Device Linking")
+	fmt.Fprintln(stdout, "GhostWA v2.5.1 Device Linking")
 	fmt.Fprintln(stdout, "──────────────────────────────────────────────────────")
 	fmt.Fprintln(stdout)
 
