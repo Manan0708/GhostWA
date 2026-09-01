@@ -220,7 +220,6 @@ func (s *Server) handleLogin(conn net.Conn) {
 }
 
 func (s *Server) handleLogout(conn net.Conn) {
-	phone := s.client.PhoneNumber()
 	if s.client.IsLoggedIn() {
 		_ = s.client.GetWhatsmeowClient().Logout(context.Background())
 	}
@@ -230,15 +229,7 @@ func (s *Server) handleLogout(conn net.Conn) {
 	}
 
 	_ = store.ClearSessionMeta()
-
-	if phone != "" {
-		accountDir, _ := store.GetAccountDataDir(phone)
-		if accountDir != "" {
-			_ = os.RemoveAll(accountDir)
-		}
-	}
-	sessionPath := filepath.Join(s.dataDir, "session.db")
-	_ = os.Remove(sessionPath)
+	_ = os.Remove(filepath.Join(s.dataDir, "session.db"))
 	_ = os.Remove(filepath.Join(s.dataDir, "messages.db"))
 
 	_ = s.sendResponse(conn, Response{Success: true})

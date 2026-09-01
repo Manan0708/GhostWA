@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -90,31 +89,14 @@ func ClearSessionMeta() error {
 	return nil
 }
 
-// GetAccountDataDir returns isolated data directory for specific phone number.
+// GetAccountDataDir returns the unified data directory for database and session files.
 func GetAccountDataDir(phone string) (string, error) {
-	baseDir, err := GetDefaultDataDir()
-	if err != nil {
-		return "", err
-	}
-	cleanPhone := strings.Map(func(r rune) rune {
-		if r >= '0' && r <= '9' {
-			return r
-		}
-		return -1
-	}, phone)
-	if cleanPhone == "" {
-		cleanPhone = "default"
-	}
-	return filepath.Join(baseDir, "accounts", cleanPhone), nil
+	return GetDefaultDataDir()
 }
 
-// GetActiveAccountDir returns isolated account directory for currently active session.
+// GetActiveAccountDir returns unified data directory for active session.
 func GetActiveAccountDir() (string, error) {
-	meta, err := GetSessionMeta()
-	if err != nil || !meta.LoggedIn || meta.Phone == "" {
-		return "", fmt.Errorf("no active logged in session")
-	}
-	return GetAccountDataDir(meta.Phone)
+	return GetDefaultDataDir()
 }
 
 // NewStore initializes a SQLite store at the specified path and runs initial table creation.
