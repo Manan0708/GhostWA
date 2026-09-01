@@ -58,8 +58,31 @@ func (s *Store) SetUnreadCount(jid string, count int) error {
 	return err
 }
 
+// RebuildChatsFromMessages populates or repairs the chats table by scanning distinct chat_jids from messages and contacts.
+func (s *Store) RebuildChatsFromMessages() error {
+	query := `
+	INSERT INTO chats (jid, name, last_message_time, updated_at)
+	SELECT 
+		m.chat_jid,
+		COALESCE(NULLIF(c.name, ''), NULLIF(c.push_name, ''), ''),
+		MAX(m.timestamp),
+		CURRENT_TIMESTAMP
+	FROM messages m
+	LEFT JOIN contacts c ON m.chat_jid = c.jid
+	WHERE m.chat_jid IS NOT NULL AND m.chat_jid != ''
+	GROUP BY m.chat_jid
+	ON CONFLICT(jid) DO UPDATE SET
+		last_message_time = MAX(chats.last_message_time, excluded.last_message_time),
+		updated_at = CURRENT_TIMESTAMP
+	`
+	_, err := s.DB.Exec(query)
+	return err
+}
+
 // GetChatList retrieves all registered chats sorted by active timestamp.
 func (s *Store) GetChatList() ([]ChatSummary, error) {
+	_ = s.RebuildChatsFromMessages()
+
 	query := `
 	SELECT 
 		c.jid, 
