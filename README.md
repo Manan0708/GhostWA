@@ -1,26 +1,34 @@
-# GhostWA v2.5 (Stealthy WhatsApp Terminal Suite & TUI Dashboard)
+# GhostWA / WACLI (WhatsApp Command Line Suite & TUI Dashboard)
 
-GhostWA is a high-performance, developer-focused terminal client and stealthy background messaging suite for WhatsApp. Engineered in Go, GhostWA leverages a decoupled **client-server architecture** using a persistent background daemon, a local SQLite database running in **WAL (Write-Ahead Logging)** mode, a TCP-based JSON IPC protocol, and interactive terminal interfaces built with Charm's **Bubble Tea** and **Lip Gloss** frameworks.
+GhostWA is a high-performance, developer-focused terminal client and messaging suite for WhatsApp. Engineered in Go, GhostWA leverages a decoupled **client-server architecture** using a persistent background daemon, a local SQLite database running in **WAL (Write-Ahead Logging)** mode, a TCP-based JSON IPC protocol, and interactive terminal interfaces built with Charm's **Bubble Tea** and **Lip Gloss** frameworks.
 
 ---
 
-## ⚡ 1-Line Quick Installation (No Go Required!)
+## 🔒 Stable Version 2.0 Quick Installation (Recommended)
 
-You can install and set up GhostWA on any machine with a **single command**. No programming tools or Go installations required!
+This installs the rock-solid, fully tested **Version 2.0** with the original clean TUI dashboard and zero experimental changes. No programming tools or Go required!
 
 ### Windows (PowerShell)
 Paste this into PowerShell or VS Code Terminal:
 ```powershell
-irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install-v2.0.ps1 | iex
 ```
 
 ### Linux / macOS (Bash)
-Paste this into Terminal:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.sh | sh
 ```
 
-Once installed, simply run `ghostwa login` to scan your QR code and get started!
+Once installed, simply run `wacli login` or `ghostwa login` to scan your QR code!
+
+---
+
+## ⚡ Experimental Version 2.5 (Dev Release)
+
+For testing experimental features (Phone pairing codes, emoji reactions, call banners, TUI redesign):
+```powershell
+irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install-v2.5.ps1 | iex
+```
 
 ---
 
