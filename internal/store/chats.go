@@ -52,6 +52,12 @@ func (s *Store) ResetUnreadCount(jid string) error {
 	return err
 }
 
+// SetUnreadCount sets unread count to an explicit value.
+func (s *Store) SetUnreadCount(jid string, count int) error {
+	_, err := s.DB.Exec("UPDATE chats SET unread_count = ? WHERE jid = ?", count, jid)
+	return err
+}
+
 // GetChatList retrieves all registered chats sorted by active timestamp.
 func (s *Store) GetChatList() ([]ChatSummary, error) {
 	query := `

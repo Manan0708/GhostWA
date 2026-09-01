@@ -245,12 +245,13 @@ func (m showModel) View() string {
 	}
 
 	// Palette definitions
-	purpleBg := lipgloss.Color("#7D56F4")
+	purpleBg := lipgloss.Color("#6C5CE7")
 	neonGreen := lipgloss.Color("#00FFA3")
-	neonPink := lipgloss.Color("#FF007A")
-	headerBg := lipgloss.Color("#24283B")
-	textColor := lipgloss.Color("#C0CAF5")
-	mutedText := lipgloss.Color("#565F89")
+	neonPink := lipgloss.Color("#FF0055")
+	cyanAccent := lipgloss.Color("#00D2FF")
+	headerBg := lipgloss.Color("#12121E")
+	textColor := lipgloss.Color("#DFE6E9")
+	mutedText := lipgloss.Color("#636E72")
 
 	// Header Banner
 	appTitle := lipgloss.NewStyle().
@@ -258,7 +259,7 @@ func (m showModel) View() string {
 		Foreground(lipgloss.Color("#FFFFFF")).
 		Background(purpleBg).
 		Padding(0, 2).
-		Render("⚡ GhostWA v2.5")
+		Render("⚡ GHOSTWA v2.5")
 
 	daemonBadge := lipgloss.NewStyle().
 		Bold(true).
@@ -267,13 +268,18 @@ func (m showModel) View() string {
 		Padding(0, 1).
 		Render("● ONLINE")
 
+	clockStr := time.Now().Format("15:04:05")
+	clockWidget := lipgloss.NewStyle().Foreground(cyanAccent).Render("🕒 " + clockStr)
+
 	headerBar := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		appTitle,
 		"  ",
 		daemonBadge,
 		"  ",
-		lipgloss.NewStyle().Foreground(mutedText).Render("Silent WhatsApp Terminal Workspace"),
+		clockWidget,
+		"  ",
+		lipgloss.NewStyle().Foreground(mutedText).Render("Silent WhatsApp Workspace"),
 	)
 
 	// Layout Widths
@@ -294,7 +300,7 @@ func (m showModel) View() string {
 		Padding(0, 1)
 
 	if m.focusIdx == 0 {
-		searchStyle = searchStyle.BorderForeground(purpleBg)
+		searchStyle = searchStyle.BorderForeground(cyanAccent)
 	}
 
 	searchContent := "🔍 " + m.searchVal
@@ -318,7 +324,7 @@ func (m showModel) View() string {
 				Background(neonPink).
 				Bold(true).
 				Padding(0, 1).
-				Render(fmt.Sprintf("%d", c.UnreadCount))
+				Render(fmt.Sprintf("%d new", c.UnreadCount))
 		}
 
 		nameText := c.Name
@@ -326,9 +332,9 @@ func (m showModel) View() string {
 			nameText = nameText[:sidebarWidth-15] + "..."
 		}
 
-		itemHeader := fmt.Sprintf("%-18s %5s", nameText, timeStr)
+		itemHeader := fmt.Sprintf("%-16s %5s", nameText, timeStr)
 		if unreadBadge != "" {
-			itemHeader = fmt.Sprintf("%-14s %s", nameText, unreadBadge)
+			itemHeader = fmt.Sprintf("%-12s %s", nameText, unreadBadge)
 		}
 
 		if idx == m.selectedIdx && m.focusIdx == 1 {
@@ -337,13 +343,13 @@ func (m showModel) View() string {
 				Background(purpleBg).
 				Bold(true).
 				Padding(0, 1).
-				Render("❯ "+itemHeader))
+				Render("▶ "+itemHeader))
 		} else if idx == m.selectedIdx {
 			listItems = append(listItems, lipgloss.NewStyle().
 				Foreground(purpleBg).
 				Bold(true).
 				Padding(0, 1).
-				Render("❯ "+itemHeader))
+				Render("▶ "+itemHeader))
 		} else {
 			listItems = append(listItems, lipgloss.NewStyle().
 				Foreground(textColor).
@@ -409,11 +415,12 @@ func (m showModel) View() string {
 
 		var line string
 		if msg.IsFromMe {
-			msgText := lipgloss.NewStyle().Foreground(neonGreen).Bold(true).Render(msg.Content)
-			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, lipgloss.NewStyle().Foreground(neonGreen).Render("You"), msgText, reactionStr)
+			msgText := lipgloss.NewStyle().Foreground(textColor).Render(msg.Content)
+			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, lipgloss.NewStyle().Foreground(neonGreen).Bold(true).Render("YOU"), msgText, reactionStr)
 		} else {
-			senderTag := lipgloss.NewStyle().Foreground(purpleBg).Bold(true).Render(sender)
-			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, senderTag, msg.Content, reactionStr)
+			senderTag := lipgloss.NewStyle().Foreground(cyanAccent).Bold(true).Render(strings.ToUpper(sender))
+			msgText := lipgloss.NewStyle().Foreground(textColor).Render(msg.Content)
+			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, senderTag, msgText, reactionStr)
 		}
 		messageLines = append(messageLines, line)
 	}
@@ -422,6 +429,12 @@ func (m showModel) View() string {
 	if historyHeight < 5 {
 		historyHeight = 5
 	}
+
+	// Slice message lines to fit viewport height cleanly
+	if len(messageLines) > historyHeight-1 {
+		messageLines = messageLines[len(messageLines)-(historyHeight-1):]
+	}
+
 	historyBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(mutedText).
@@ -442,7 +455,7 @@ func (m showModel) View() string {
 
 	inputPrompt := "❯ " + m.messageVal
 	if m.messageVal == "" && m.focusIdx != 2 {
-		inputPrompt = "❯ Type a message... [Press Tab or Click to Focus]"
+		inputPrompt = "❯ Type a message... [Press Tab to focus]"
 	}
 	inputBox := inputBorderStyle.Render(inputPrompt)
 
@@ -454,7 +467,7 @@ func (m showModel) View() string {
 	// Footer Help Bar
 	footerLegend := lipgloss.NewStyle().
 		Foreground(mutedText).
-		Render("[Tab] Switch Focus  │  [d] Delete Chat  │  [/] Search  │  [Esc] Quit")
+		Render("[Tab] Switch Focus  │  [Enter] Send Message  │  [d] Delete Chat  │  [/] Search  │  [Esc] Quit")
 
 	return lipgloss.JoinVertical(lipgloss.Left, headerBar, "\n", mainBody, "\n", footerLegend)
 }

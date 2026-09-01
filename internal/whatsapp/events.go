@@ -41,11 +41,12 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 				}
 				chatJID = c.ResolveLIDToPN(context.Background(), chatJID)
 
-				// Attempt to get chat name (if available on conversation protobuf metadata)
 				chatName := conv.GetName()
+				unreadCount := int(conv.GetUnreadCount())
 
-				// Register the chat in the local database
+				// Register the chat in the local database and set explicit unread count from WhatsApp metadata
 				_ = c.store.UpsertChat(chatJID.String(), chatName, time.Now())
+				_ = c.store.SetUnreadCount(chatJID.String(), unreadCount)
 
 				// Loop through and persist historical messages
 				for _, historyMsg := range conv.GetMessages() {
