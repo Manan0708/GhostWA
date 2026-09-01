@@ -128,12 +128,23 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "shift+enter", "alt+enter", "ctrl+j":
+			if m.focusIdx == 2 {
+				m.messageVal += "\n"
+			}
+			return m, nil
+
 		case "enter":
 			if m.focusIdx == 0 {
 				m.focusIdx = 1
 			} else if m.focusIdx == 1 {
 				m.focusIdx = 2
 			} else if m.focusIdx == 2 && m.messageVal != "" && m.activeChat.JID != "" {
+				if strings.HasSuffix(m.messageVal, "\\") {
+					m.messageVal = strings.TrimSuffix(m.messageVal, "\\") + "\n"
+					return m, nil
+				}
+
 				text := strings.TrimSpace(m.messageVal)
 				if strings.HasPrefix(text, "/react ") || strings.HasPrefix(text, "/r ") {
 					parts := strings.SplitN(text, " ", 2)
@@ -264,7 +275,7 @@ func (m showModel) View() string {
 		Foreground(lipgloss.Color("#FFFFFF")).
 		Background(purpleBg).
 		Padding(0, 2).
-		Render("⚡ GHOSTWA v2.5.2")
+		Render("⚡ GHOSTWA v2.5.3")
 
 	daemonBadge := lipgloss.NewStyle().
 		Bold(true).
