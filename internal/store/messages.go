@@ -11,6 +11,7 @@ type Message struct {
 	Content   string
 	Timestamp time.Time
 	IsFromMe  bool
+	Reaction  string
 }
 
 // SaveMessage stores a message in the local SQLite table.
@@ -29,10 +30,35 @@ func (s *Store) SaveMessage(id, chatJID, senderJID, content string, timestamp ti
 	return err
 }
 
+// SetMessageReaction updates the reaction emoji for a given message ID.
+func (s *Store) SetMessageReaction(id string, emoji string) error {
+	_, err := s.DB.Exec("UPDATE messages SET reaction = ? WHERE id = ?", emoji, id)
+	return err
+}
+
+// GetLastMessage retrieves the most recent message in a chat.
+func (s *Store) GetLastMessage(chatJID string) (*Message, error) {
+	query := `
+	SELECT id, sender_jid, content, timestamp, is_from_me, COALESCE(reaction, '')
+	FROM messages
+	WHERE chat_jid = ?
+	ORDER BY timestamp DESC
+	LIMIT 1
+	`
+	var m Message
+	var isFromMeInt int
+	err := s.DB.QueryRow(query, chatJID).Scan(&m.ID, &m.SenderJID, &m.Content, &m.Timestamp, &isFromMeInt, &m.Reaction)
+	if err != nil {
+		return nil, err
+	}
+	m.IsFromMe = (isFromMeInt == 1)
+	return &m, nil
+}
+
 // GetRecentMessages retrieves the latest messages for a chat, sorted in chronological order.
 func (s *Store) GetRecentMessages(chatJID string, limit int) ([]Message, error) {
 	query := `
-	SELECT id, sender_jid, content, timestamp, is_from_me
+	SELECT id, sender_jid, content, timestamp, is_from_me, COALESCE(reaction, '')
 	FROM messages
 	WHERE chat_jid = ?
 	ORDER BY timestamp DESC
@@ -48,7 +74,7 @@ func (s *Store) GetRecentMessages(chatJID string, limit int) ([]Message, error) 
 	for rows.Next() {
 		var m Message
 		var isFromMeInt int
-		err := rows.Scan(&m.ID, &m.SenderJID, &m.Content, &m.Timestamp, &isFromMeInt)
+		err := rows.Scan(&m.ID, &m.SenderJID, &m.Content, &m.Timestamp, &isFromMeInt, &m.Reaction)
 		if err != nil {
 			return nil, err
 		}

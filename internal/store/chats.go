@@ -79,3 +79,17 @@ func (s *Store) GetChatList() ([]ChatSummary, error) {
 	}
 	return chats, nil
 }
+
+// DeleteChat purges a chat from SQLite storage along with all its message logs.
+func (s *Store) DeleteChat(jid string) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, _ = tx.Exec("DELETE FROM messages WHERE chat_jid = ?", jid)
+	_, _ = tx.Exec("DELETE FROM chats WHERE jid = ?", jid)
+
+	return tx.Commit()
+}

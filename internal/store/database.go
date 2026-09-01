@@ -95,12 +95,18 @@ func (s *Store) initSchema() error {
 		content TEXT,
 		timestamp DATETIME,
 		is_from_me INTEGER,
+		reaction TEXT DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY(chat_jid) REFERENCES chats(jid)
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_messages_content ON messages(content);
 	`
-	_, err := s.DB.Exec(schema)
-	return err
+	if _, err := s.DB.Exec(schema); err != nil {
+		return err
+	}
+
+	// Safely add reaction column if upgrading from earlier database version
+	_, _ = s.DB.Exec("ALTER TABLE messages ADD COLUMN reaction TEXT DEFAULT '';")
+	return nil
 }

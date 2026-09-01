@@ -62,6 +62,10 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runSend(args[1:], stdout, stderr)
 	case "listen":
 		return runListen(stdout, stderr)
+	case "delete-chat":
+		return runDeleteChat(args[1:], stdout, stderr)
+	case "sync":
+		return runSync(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", args[0])
 		fmt.Fprintln(stderr, "Run 'ghostwa --help' for usage.")
@@ -88,5 +92,7 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "  ghostwa open <chat>   Open an interactive conversation")
 	fmt.Fprintln(w, "  ghostwa search <text> Search chat names and message contents")
 	fmt.Fprintln(w, "  ghostwa send <to>     Send a text message or local media file")
+	fmt.Fprintln(w, "  ghostwa delete-chat   Delete a conversation and message history")
+	fmt.Fprintln(w, "  ghostwa sync <target> Manually sync chats, group names or message history")
 	fmt.Fprintln(w, "  ghostwa listen        Listen for incoming text messages in real-time")
 }

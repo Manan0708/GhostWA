@@ -18,6 +18,7 @@ import (
 	"github.com/Manan0708/GhostWA/internal/store"
 	"github.com/Manan0708/GhostWA/internal/whatsapp"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waCommon"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
@@ -138,6 +139,14 @@ func (s *Server) handleConnection(conn net.Conn) {
 		case "subscribe":
 			s.addSubscriber(conn)
 			s.sendResponse(conn, Response{Success: true})
+		case "react":
+			s.handleReact(conn, req)
+		case "delete_chat":
+			s.handleDeleteChat(conn, req)
+		case "sync_chats":
+			s.handleSyncChats(conn)
+		case "sync_history":
+			s.handleSyncHistory(conn, req)
 		case "stop":
 			s.sendResponse(conn, Response{Success: true})
 			s.Stop()
@@ -560,4 +569,74 @@ func (s *Server) mergeLIDs() {
 	if mergedCount > 0 {
 		log.Printf("✓ Successfully merged %d duplicate LID chats into their corresponding Phone Number (PN) chats", mergedCount)
 	}
+}
+
+func (s *Server) handleReact(conn net.Conn, req Request) {
+	if !s.client.IsLoggedIn() {
+		s.sendError(conn, "device is not logged in")
+		return
+	}
+	res := resolver.NewResolver(s.store)
+	targetJID, err := res.Resolve(req.To)
+	if err != nil {
+		s.sendError(conn, fmt.Sprintf("recipient resolution error: %v", err))
+		return
+	}
+
+	targetMsgID := req.MsgID
+	if targetMsgID == "" {
+		lastMsg, err := s.store.GetLastMessage(targetJID.String())
+		if err != nil || lastMsg == nil {
+			s.sendError(conn, "no recent message found to react to")
+			return
+		}
+		targetMsgID = lastMsg.ID
+	}
+
+	reactMsg := &waE2E.Message{
+		ReactionMessage: &waE2E.ReactionMessage{
+			Key: &waCommon.MessageKey{
+				RemoteJID: proto.String(targetJID.String()),
+				FromMe:    proto.Bool(false),
+				ID:        proto.String(targetMsgID),
+			},
+			Text:              proto.String(req.Emoji),
+			SenderTimestampMS: proto.Int64(time.Now().UnixMilli()),
+		},
+	}
+	_, err = s.client.GetWhatsmeowClient().SendMessage(context.Background(), targetJID, reactMsg)
+	if err != nil {
+		s.sendError(conn, fmt.Sprintf("failed to send reaction: %v", err))
+		return
+	}
+
+	_ = s.store.SetMessageReaction(targetMsgID, req.Emoji)
+	_ = s.sendResponse(conn, Response{Success: true})
+}
+
+func (s *Server) handleDeleteChat(conn net.Conn, req Request) {
+	res := resolver.NewResolver(s.store)
+	targetJID, err := res.Resolve(req.To)
+	if err != nil {
+		s.sendError(conn, fmt.Sprintf("recipient resolution error: %v", err))
+		return
+	}
+
+	err = s.store.DeleteChat(targetJID.String())
+	if err != nil {
+		s.sendError(conn, fmt.Sprintf("failed to delete chat: %v", err))
+		return
+	}
+
+	_ = s.sendResponse(conn, Response{Success: true})
+}
+
+func (s *Server) handleSyncChats(conn net.Conn) {
+	go s.syncContacts()
+	_ = s.sendResponse(conn, Response{Success: true})
+}
+
+func (s *Server) handleSyncHistory(conn net.Conn, req Request) {
+	go s.syncContacts()
+	_ = s.sendResponse(conn, Response{Success: true})
 }

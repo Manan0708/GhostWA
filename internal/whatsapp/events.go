@@ -166,6 +166,13 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 						text = fmt.Sprintf("📄 [Document received: %s]", savePath)
 					}
 				}
+			} else if v.Message.ReactionMessage != nil {
+				reactMsg := v.Message.ReactionMessage
+				targetID := reactMsg.GetKey().GetID()
+				emoji := reactMsg.GetText()
+				if c.store != nil && targetID != "" {
+					_ = c.store.SetMessageReaction(targetID, emoji)
+				}
 			}
 
 			if text != "" {
@@ -227,6 +234,42 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 					})
 				}
 			}
+
+		case *events.CallOffer:
+			if c.store == nil {
+				return
+			}
+			chatJID := c.ResolveLIDToPN(context.Background(), v.CallCreator).String()
+			text := "📞 [Incoming Voice/Video Call]"
+			_ = c.store.UpsertChat(chatJID, "", v.Timestamp)
+			_ = c.store.IncrementUnreadCount(chatJID)
+			_ = c.store.SaveMessage(v.CallID, chatJID, chatJID, text, v.Timestamp, false)
+			callback(MessageEvent{
+				SenderNum:  v.CallCreator.User,
+				SenderName: "",
+				ChatJID:    chatJID,
+				Text:       text,
+				Timestamp:  v.Timestamp,
+				IsRecent:   true,
+			})
+
+		case *events.CallOfferNotice:
+			if c.store == nil {
+				return
+			}
+			chatJID := c.ResolveLIDToPN(context.Background(), v.CallCreator).String()
+			text := "❌ [Missed Call]"
+			_ = c.store.UpsertChat(chatJID, "", v.Timestamp)
+			_ = c.store.IncrementUnreadCount(chatJID)
+			_ = c.store.SaveMessage(v.CallID, chatJID, chatJID, text, v.Timestamp, false)
+			callback(MessageEvent{
+				SenderNum:  v.CallCreator.User,
+				SenderName: "",
+				ChatJID:    chatJID,
+				Text:       text,
+				Timestamp:  v.Timestamp,
+				IsRecent:   true,
+			})
 		}
 	})
 }

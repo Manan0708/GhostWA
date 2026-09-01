@@ -99,6 +99,13 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "ctrl+d", "delete":
+			if m.activeChat.JID != "" {
+				_ = m.db.DeleteChat(m.activeChat.JID)
+				m.reloadChats()
+			}
+			return m, nil
+
 		case "enter":
 			if m.focusIdx == 2 && m.messageVal != "" && m.activeChat.JID != "" {
 				// Send message via daemon
@@ -319,7 +326,11 @@ func (m showModel) View() string {
 				sender = "+" + parts[0]
 			}
 		}
-		line := fmt.Sprintf("[%s] %s: %s", timeStr, sender, msg.Content)
+		reactionStr := ""
+		if msg.Reaction != "" {
+			reactionStr = "  " + msg.Reaction
+		}
+		line := fmt.Sprintf("[%s] %s: %s%s", timeStr, sender, msg.Content, reactionStr)
 		messageLines = append(messageLines, line)
 	}
 

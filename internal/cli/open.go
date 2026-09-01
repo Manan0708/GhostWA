@@ -235,7 +235,11 @@ func runOpen(args []string, stdout, stderr io.Writer) int {
 					if msg.IsFromMe {
 						sender = "You"
 					}
-					fmt.Fprintf(stdout, "[%s] %s: %s\n", timestamp, sender, msg.Content)
+					reactionStr := ""
+					if msg.Reaction != "" {
+						reactionStr = "  " + msg.Reaction
+					}
+					fmt.Fprintf(stdout, "[%s] %s: %s%s\n", timestamp, sender, msg.Content, reactionStr)
 				}
 				fmt.Fprintln(stdout, "────────────────────────────────────────────────────────")
 			} else {
@@ -425,6 +429,49 @@ func runOpen(args []string, stdout, stderr io.Writer) int {
 			continue
 		}
 
+		// Handle /react command inside open chat
+		if strings.HasPrefix(text, "/react") {
+			parts := strings.Fields(text)
+			if len(parts) < 2 {
+				fmt.Fprintln(stdout, "\rUsage: /react <emoji>")
+			} else {
+				emoji := parts[1]
+				err := sendDaemonRequest("react", targetJID.String(), "", emoji)
+				if err != nil {
+					fmt.Fprintf(stderr, "\rError reacting: %v\n", err)
+				} else {
+					fmt.Fprintf(stdout, "\r✓ Reacted %s to recent message\n", emoji)
+				}
+			}
+			fmt.Fprint(stdout, "> ")
+			continue
+		}
+
+		// Handle /delete command inside open chat
+		if text == "/delete" {
+			err := sendDaemonRequest("delete_chat", targetJID.String(), "", "")
+			if err != nil {
+				fmt.Fprintf(stderr, "\rError deleting chat: %v\n", err)
+			} else {
+				fmt.Fprintln(stdout, "\r✓ Chat deleted successfully.")
+				return 0
+			}
+			fmt.Fprint(stdout, "> ")
+			continue
+		}
+
+		// Handle /sync command inside open chat
+		if text == "/sync" || text == "/sync history" {
+			err := sendDaemonRequest("sync_history", targetJID.String(), "", "")
+			if err != nil {
+				fmt.Fprintf(stderr, "\rError syncing chat: %v\n", err)
+			} else {
+				fmt.Fprintln(stdout, "\r✓ History and contact sync triggered for this chat.")
+			}
+			fmt.Fprint(stdout, "> ")
+			continue
+		}
+
 		// Send message via daemon over a separate connection to avoid messing with current reader stream
 		err := sendMessageViaDaemon(targetJID.String(), text)
 		if err != nil {
@@ -488,4 +535,34 @@ func (c *chatState) setMuted(v bool) {
 	c.Lock()
 	defer c.Unlock()
 	c.muted = v
+}
+
+func sendDaemonRequest(reqType, to, body, emoji string) error {
+	conn, err := net.Dial("tcp", "127.0.0.1:9090")
+	if err != nil {
+		return fmt.Errorf("daemon is not running: %w", err)
+	}
+	defer conn.Close()
+
+	req := wadaemon.Request{
+		Type:  reqType,
+		To:    to,
+		Body:  body,
+		Emoji: emoji,
+	}
+	data, _ := json.Marshal(req)
+	_, _ = conn.Write(append(data, '\n'))
+
+	reader := bufio.NewReader(conn)
+	line, err := reader.ReadBytes('\n')
+	if err != nil {
+		return fmt.Errorf("connection lost: %w", err)
+	}
+
+	var resp wadaemon.Response
+	_ = json.Unmarshal(line, &resp)
+	if !resp.Success {
+		return fmt.Errorf("%s", resp.Error)
+	}
+	return nil
 }

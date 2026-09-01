@@ -2,9 +2,11 @@ package daemon
 
 // Request represents a JSON request sent from the CLI client to the background daemon.
 type Request struct {
-	Type string `json:"type"`            // "status", "login", "send", "subscribe", "stop"
-	To   string `json:"to,omitempty"`   // recipient phone, JID, or contact name (for send)
-	Body string `json:"body,omitempty"` // message content (for send)
+	Type  string `json:"type"`            // "status", "login", "send", "subscribe", "stop", "react", "delete_chat", "sync_chats", "sync_history"
+	To    string `json:"to,omitempty"`   // recipient phone, JID, or contact name (for send/react/delete)
+	Body  string `json:"body,omitempty"` // message content (for send)
+	MsgID string `json:"msg_id,omitempty"`// target message ID (for react)
+	Emoji string `json:"emoji,omitempty"` // reaction emoji (for react)
 }
 
 // Response represents a JSON response sent from the background daemon to the CLI client.
