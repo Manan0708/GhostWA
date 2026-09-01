@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 // runLogout handles the "logout" CLI command.
@@ -27,13 +29,24 @@ func runLogout(stdout, stderr io.Writer) int {
 		_ = json.Unmarshal(line, &resp)
 	}
 
-	// Always force-wipe session.db and reset messages database locally to guarantee complete session reset
-	home, _ := os.UserHomeDir()
-	dataDir := filepath.Join(home, ".local", "share", "wacli")
-	sessionPath := filepath.Join(dataDir, "session.db")
-	dbPath := filepath.Join(dataDir, "messages.db")
-	_ = os.Remove(sessionPath)
-	_ = os.Remove(dbPath)
+	// Always force-kill any running daemon processes to release SQLite file locks
+	_ = exec.Command("taskkill", "/F", "/IM", "ghostwa.exe").Run()
+	_ = exec.Command("taskkill", "/F", "/IM", "wacli.exe").Run()
+
+	meta, _ := store.GetSessionMeta()
+	_ = store.ClearSessionMeta()
+
+	if meta.Phone != "" {
+		accountDir, _ := store.GetAccountDataDir(meta.Phone)
+		if accountDir != "" {
+			_ = os.RemoveAll(accountDir)
+		}
+	}
+
+	baseDir, _ := store.GetDefaultDataDir()
+	_ = os.RemoveAll(filepath.Join(baseDir, "accounts"))
+	_ = os.Remove(filepath.Join(baseDir, "session.db"))
+	_ = os.Remove(filepath.Join(baseDir, "messages.db"))
 
 	fmt.Fprintln(stdout, "✓ Successfully logged out and unlinked your WhatsApp device.")
 	fmt.Fprintln(stdout, "✓ Session credentials and local chat history cleared.")

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -474,15 +473,15 @@ func (m showModel) View() string {
 
 // runShow launches the redesigned TUI Dashboard.
 func runShow(stdout, stderr io.Writer) int {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Fprintf(stderr, "Error resolving home directory: %v\n", err)
+	meta, _ := store.GetSessionMeta()
+	if !meta.LoggedIn {
+		fmt.Fprintln(stderr, "Not logged in. Please run 'ghostwa login' to link your WhatsApp device.")
 		return 1
 	}
-	dataDir := filepath.Join(home, ".local", "share", "wacli")
-	sessionPath := filepath.Join(dataDir, "session.db")
-	if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
-		fmt.Fprintln(stderr, "Not logged in. Please run 'ghostwa login' to link your WhatsApp device.")
+
+	dataDir, err := store.GetAccountDataDir(meta.Phone)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error resolving account directory: %v\n", err)
 		return 1
 	}
 

@@ -96,6 +96,7 @@ func TestRunChats(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 	t.Setenv("WACLI_DATA_DIR", tempDir)
+	_ = store.SaveSessionMeta("1234567890", true)
 	_ = os.WriteFile(filepath.Join(tempDir, "session.db"), []byte("dummy"), 0644)
 
 	stdout := &bytes.Buffer{}

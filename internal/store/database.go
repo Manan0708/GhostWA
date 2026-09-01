@@ -2,9 +2,11 @@ package store
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -12,6 +14,12 @@ import (
 // Store wraps the sql.DB object to provide methods for querying our local SQLite database.
 type Store struct {
 	DB *sql.DB
+}
+
+// SessionMeta tracks active login state and associated phone number.
+type SessionMeta struct {
+	LoggedIn bool   `json:"logged_in"`
+	Phone    string `json:"phone"`
 }
 
 // GetDefaultDataDir returns the path to ~/.local/share/wacli on Unix/macOS or the equivalent on Windows.
@@ -26,6 +34,87 @@ func GetDefaultDataDir() (string, error) {
 	}
 	dataDir := filepath.Join(home, ".local", "share", "wacli")
 	return dataDir, nil
+}
+
+// GetSessionMetaPath returns the path to ~/.local/share/wacli/session_info.json
+func GetSessionMetaPath() (string, error) {
+	baseDir, err := GetDefaultDataDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(baseDir, "session_info.json"), nil
+}
+
+// SaveSessionMeta records active login status and phone number.
+func SaveSessionMeta(phone string, loggedIn bool) error {
+	metaPath, err := GetSessionMetaPath()
+	if err != nil {
+		return err
+	}
+	_ = os.MkdirAll(filepath.Dir(metaPath), 0755)
+	meta := SessionMeta{
+		LoggedIn: loggedIn,
+		Phone:    phone,
+	}
+	data, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(metaPath, data, 0644)
+}
+
+// GetSessionMeta reads active login status and phone number.
+func GetSessionMeta() (SessionMeta, error) {
+	metaPath, err := GetSessionMetaPath()
+	if err != nil {
+		return SessionMeta{LoggedIn: false}, nil
+	}
+	data, err := os.ReadFile(metaPath)
+	if err != nil {
+		return SessionMeta{LoggedIn: false}, nil
+	}
+	var meta SessionMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return SessionMeta{LoggedIn: false}, nil
+	}
+	return meta, nil
+}
+
+// ClearSessionMeta wipes active session metadata.
+func ClearSessionMeta() error {
+	metaPath, err := GetSessionMetaPath()
+	if err != nil {
+		return err
+	}
+	_ = os.Remove(metaPath)
+	return nil
+}
+
+// GetAccountDataDir returns isolated data directory for specific phone number.
+func GetAccountDataDir(phone string) (string, error) {
+	baseDir, err := GetDefaultDataDir()
+	if err != nil {
+		return "", err
+	}
+	cleanPhone := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, phone)
+	if cleanPhone == "" {
+		cleanPhone = "default"
+	}
+	return filepath.Join(baseDir, "accounts", cleanPhone), nil
+}
+
+// GetActiveAccountDir returns isolated account directory for currently active session.
+func GetActiveAccountDir() (string, error) {
+	meta, err := GetSessionMeta()
+	if err != nil || !meta.LoggedIn || meta.Phone == "" {
+		return "", fmt.Errorf("no active logged in session")
+	}
+	return GetAccountDataDir(meta.Phone)
 }
 
 // NewStore initializes a SQLite store at the specified path and runs initial table creation.

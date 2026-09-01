@@ -206,6 +206,8 @@ func (s *Server) handleLogin(conn net.Conn) {
 			if evt.Event == "code" {
 				_ = s.sendEvent(conn, Event{Type: "qr", Code: evt.Code})
 			} else if evt.Event == "success" {
+				phone := s.client.PhoneNumber()
+				_ = store.SaveSessionMeta(phone, true)
 				_ = s.sendEvent(conn, Event{Type: "login_success"})
 				log.Println("Session linked successfully via client scan")
 				return
@@ -218,16 +220,26 @@ func (s *Server) handleLogin(conn net.Conn) {
 }
 
 func (s *Server) handleLogout(conn net.Conn) {
+	phone := s.client.PhoneNumber()
 	if s.client.IsLoggedIn() {
 		_ = s.client.GetWhatsmeowClient().Logout(context.Background())
 	}
 	s.client.Disconnect()
-	// Force-wipe session.db file and reset messages database so daemon resets completely
+	if s.store != nil && s.store.DB != nil {
+		_ = s.store.DB.Close()
+	}
+
+	_ = store.ClearSessionMeta()
+
+	if phone != "" {
+		accountDir, _ := store.GetAccountDataDir(phone)
+		if accountDir != "" {
+			_ = os.RemoveAll(accountDir)
+		}
+	}
 	sessionPath := filepath.Join(s.dataDir, "session.db")
 	_ = os.Remove(sessionPath)
-	if s.store != nil {
-		_ = s.store.ResetDatabase()
-	}
+	_ = os.Remove(filepath.Join(s.dataDir, "messages.db"))
 
 	_ = s.sendResponse(conn, Response{Success: true})
 	log.Println("Device logged out cleanly. Shutting down daemon.")

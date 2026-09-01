@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,15 +11,15 @@ import (
 
 // runChats handles the "chats" command to show direct chats (excluding groups).
 func runChats(stdout, stderr io.Writer) int {
-	dataDir, err := store.GetDefaultDataDir()
-	if err != nil {
-		fmt.Fprintf(stderr, "Error finding data directory: %v\n", err)
+	meta, _ := store.GetSessionMeta()
+	if !meta.LoggedIn {
+		fmt.Fprintln(stderr, "Not logged in. Please run 'ghostwa login' to link your WhatsApp device.")
 		return 1
 	}
 
-	sessionPath := filepath.Join(dataDir, "session.db")
-	if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
-		fmt.Fprintln(stderr, "Not logged in. Please run 'ghostwa login' to link your WhatsApp device.")
+	dataDir, err := store.GetAccountDataDir(meta.Phone)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error finding data directory: %v\n", err)
 		return 1
 	}
 
