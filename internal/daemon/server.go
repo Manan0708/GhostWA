@@ -168,6 +168,7 @@ func (s *Server) handleStatus(conn net.Conn) {
 		status = "disconnected"
 		if s.client.IsConnected() {
 			status = "connected"
+			go s.syncContacts()
 		}
 		phone = "+" + s.client.PhoneNumber()
 	} else {

@@ -121,27 +121,27 @@ func (c *Client) PairPhone(phone string) (string, error) {
 	return code, nil
 }
 
-// SyncStoreContacts queries Whatsmeow's contact cache store and populates local SQLite contacts table.
+// SyncStoreContacts queries Whatsmeow's contact cache store and populates local SQLite contacts and chats tables.
 func (c *Client) SyncStoreContacts() {
 	if c.store == nil || c.whatsmeowClient == nil || c.whatsmeowClient.Store == nil {
 		return
 	}
 	contacts, err := c.whatsmeowClient.Store.Contacts.GetAllContacts(context.Background())
-	if err != nil {
-		return
-	}
-	for jid, info := range contacts {
-		if jid.IsEmpty() {
-			continue
-		}
-		resolved := c.ResolveLIDToPN(context.Background(), jid)
-		resJID := resolved.String()
-		contactName := info.FullName
-		if contactName == "" {
-			contactName = info.PushName
-		}
-		if contactName != "" {
-			_ = c.store.UpsertContact(resJID, contactName, resolved.User, info.PushName)
+	if err == nil {
+		for jid, info := range contacts {
+			if jid.IsEmpty() || jid.Server == "status" {
+				continue
+			}
+			resolved := c.ResolveLIDToPN(context.Background(), jid)
+			resJID := resolved.String()
+			contactName := info.FullName
+			if contactName == "" {
+				contactName = info.PushName
+			}
+			if contactName != "" {
+				_ = c.store.UpsertContact(resJID, contactName, resolved.User, info.PushName)
+			}
+			// Always upsert chat so it appears in chat list regardless of whether name is resolved yet
 			_ = c.store.UpsertChat(resJID, contactName, time.Now())
 		}
 	}
