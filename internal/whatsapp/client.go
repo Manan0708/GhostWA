@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Manan0708/GhostWA/internal/store"
@@ -108,13 +109,32 @@ func (c *Client) GetWhatsmeowClient() *whatsmeow.Client {
 
 // PairPhone requests an 8-digit pairing code to link a device using a phone number.
 func (c *Client) PairPhone(phone string) (string, error) {
+	cleanPhone := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, phone)
+
+	if cleanPhone == "" {
+		return "", fmt.Errorf("invalid phone number format")
+	}
+
 	if !c.whatsmeowClient.IsConnected() {
 		err := c.whatsmeowClient.Connect()
 		if err != nil {
 			return "", fmt.Errorf("failed to connect to WhatsApp servers: %w", err)
 		}
 	}
-	code, err := c.whatsmeowClient.PairPhone(context.Background(), phone, true, whatsmeow.PairClientChrome, "GhostWA Terminal")
+
+	for i := 0; i < 50; i++ {
+		if c.whatsmeowClient.IsConnected() {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	code, err := c.whatsmeowClient.PairPhone(context.Background(), cleanPhone, true, whatsmeow.PairClientChrome, "GhostWA Terminal")
 	if err != nil {
 		return "", fmt.Errorf("failed to generate phone pairing code: %w", err)
 	}

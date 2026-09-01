@@ -188,6 +188,11 @@ func (s *Server) handleLogin(conn net.Conn) {
 		return
 	}
 
+	if s.client.IsConnected() {
+		s.client.Disconnect()
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	qrChan, err := s.client.GetWhatsmeowClient().GetQRChannel(context.Background())
 	if err != nil {
 		s.sendError(conn, fmt.Sprintf("failed to request QR channel: %v", err))
