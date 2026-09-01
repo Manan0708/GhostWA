@@ -2,6 +2,8 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -75,9 +77,32 @@ func (s *Store) GetChatList() ([]ChatSummary, error) {
 		if err != nil {
 			return nil, err
 		}
+		c.Name = formatDisplayName(c.JID, c.Name)
 		chats = append(chats, c)
 	}
 	return chats, nil
+}
+
+// formatDisplayName formats a JID or raw phone number into a clean human-readable name or phone string.
+func formatDisplayName(jid, name string) string {
+	if name != "" && name != jid && !strings.Contains(name, "@s.whatsapp.net") && !strings.Contains(name, "@g.us") {
+		return name
+	}
+	if strings.HasSuffix(jid, "@s.whatsapp.net") {
+		num := strings.TrimSuffix(jid, "@s.whatsapp.net")
+		if len(num) >= 10 {
+			if len(num) == 12 && strings.HasPrefix(num, "91") {
+				return fmt.Sprintf("+91 %s-%s", num[2:7], num[7:])
+			} else if len(num) == 11 && strings.HasPrefix(num, "1") {
+				return fmt.Sprintf("+1 (%s) %s-%s", num[1:4], num[4:7], num[7:])
+			}
+			return "+" + num
+		}
+		return "+" + num
+	} else if strings.HasSuffix(jid, "@g.us") {
+		return "Group Chat"
+	}
+	return jid
 }
 
 // DeleteChat purges a chat from SQLite storage along with all its message logs.

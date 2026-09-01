@@ -3,6 +3,7 @@ package whatsapp
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +31,9 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 			if c.store == nil {
 				return
 			}
+			// Trigger store contact synchronization
+			c.SyncStoreContacts()
+
 			for _, conv := range v.Data.GetConversations() {
 				chatJID, _ := types.ParseJID(conv.GetID())
 				if chatJID.IsEmpty() {
@@ -268,6 +272,18 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 				ChatJID:    chatJID,
 				Text:       text,
 				Timestamp:  v.Timestamp,
+				IsRecent:   true,
+			})
+		case *events.LoggedOut:
+			log.Println("⚠️ Received LoggedOut event: Device was unlinked from WhatsApp mobile app.")
+			home, _ := os.UserHomeDir()
+			_ = os.Remove(filepath.Join(home, ".local", "share", "wacli", "session.db"))
+			callback(MessageEvent{
+				SenderNum:  "SYSTEM",
+				SenderName: "System",
+				ChatJID:    "SYSTEM",
+				Text:       "⚠️ DEVICE UNLINKED: Your device was logged out from WhatsApp. Please run 'ghostwa login' to re-authenticate.",
+				Timestamp:  time.Now(),
 				IsRecent:   true,
 			})
 		}

@@ -33,7 +33,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		printHelp(stdout)
 		return 0
 	case "login":
-		return runLogin(stdout, stderr)
+		return runLogin(args[1:], stdout, stderr)
 	case "status":
 		return runStatus(stdout, stderr)
 	case "chats":

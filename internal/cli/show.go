@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,25 +18,25 @@ import (
 )
 
 type showModel struct {
-	chats        []store.ChatSummary
-	filtered     []store.ChatSummary
-	selectedIdx  int
-	activeChat   store.ChatSummary
-	messages     []store.Message
+	chats       []store.ChatSummary
+	filtered    []store.ChatSummary
+	selectedIdx int
+	activeChat  store.ChatSummary
+	messages    []store.Message
 
-	searchVal    string
-	messageVal   string
+	searchVal  string
+	messageVal string
 
 	// focusIdx: 0 = search, 1 = chats, 2 = input
-	focusIdx     int
+	focusIdx int
 
-	width        int
-	height       int
+	width  int
+	height int
 
-	db           *store.Store
-	conn         net.Conn
-	err          error
-	quitting     bool
+	db       *store.Store
+	conn     net.Conn
+	err      error
+	quitting bool
 }
 
 type incomingMsg wadaemon.Event
@@ -51,12 +52,29 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
 			m.quitting = true
 			if m.conn != nil {
 				m.conn.Close()
 			}
 			return m, tea.Quit
+
+		case "esc":
+			if m.focusIdx != 1 {
+				m.focusIdx = 1
+				return m, nil
+			}
+			m.quitting = true
+			if m.conn != nil {
+				m.conn.Close()
+			}
+			return m, tea.Quit
+
+		case "/":
+			if m.focusIdx != 0 {
+				m.focusIdx = 0
+				return m, nil
+			}
 
 		case "tab":
 			m.focusIdx = (m.focusIdx + 1) % 3
@@ -72,6 +90,8 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedIdx--
 					m.activeChat = m.filtered[m.selectedIdx]
 					m.loadMessages()
+					_ = m.db.ResetUnreadCount(m.activeChat.JID)
+					m.reloadChats()
 				}
 			}
 			return m, nil
@@ -82,6 +102,8 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.selectedIdx++
 					m.activeChat = m.filtered[m.selectedIdx]
 					m.loadMessages()
+					_ = m.db.ResetUnreadCount(m.activeChat.JID)
+					m.reloadChats()
 				}
 			}
 			return m, nil
@@ -107,22 +129,23 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
-			if m.focusIdx == 2 && m.messageVal != "" && m.activeChat.JID != "" {
-				// Send message via daemon
+			if m.focusIdx == 0 {
+				m.focusIdx = 1
+			} else if m.focusIdx == 1 {
+				m.focusIdx = 2
+			} else if m.focusIdx == 2 && m.messageVal != "" && m.activeChat.JID != "" {
 				_ = sendMessageViaDaemon(m.activeChat.JID, m.messageVal)
-				
-				// Save locally
+
 				myJID := "me@s.whatsapp.net"
 				_ = m.db.UpsertChat(m.activeChat.JID, m.activeChat.Name, time.Now())
 				_ = m.db.SaveMessage("out-"+time.Now().Format("150405"), m.activeChat.JID, myJID, m.messageVal, time.Now(), true)
-				
+
 				m.messageVal = ""
 				m.loadMessages()
 			}
 			return m, nil
 
 		default:
-			// Handle standard letters/numbers/spaces for text inputs
 			char := msg.String()
 			if len(char) == 1 {
 				if m.focusIdx == 0 {
@@ -154,7 +177,7 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case incomingMsg:
-		if msg.Type == "message" {
+		if msg.Type == "message" || msg.Type == "logged_out" {
 			m.reloadChats()
 			if m.activeChat.JID != "" && (msg.Chat == m.activeChat.JID || (msg.Chat == "" && msg.Sender+"@s.whatsapp.net" == m.activeChat.JID)) {
 				m.loadMessages()
@@ -174,7 +197,7 @@ func (m *showModel) filterChats() {
 		var list []store.ChatSummary
 		q := strings.ToLower(m.searchVal)
 		for _, c := range m.chats {
-			if strings.Contains(strings.ToLower(c.Name), q) {
+			if strings.Contains(strings.ToLower(c.Name), q) || strings.Contains(strings.ToLower(c.JID), q) {
 				list = append(list, c)
 			}
 		}
@@ -193,122 +216,176 @@ func (m *showModel) filterChats() {
 }
 
 func (m *showModel) reloadChats() {
-	list, err := m.db.GetChatList()
+	chats, err := m.db.GetChatList()
 	if err == nil {
-		m.chats = list
+		m.chats = chats
 		m.filterChats()
 	}
 }
 
 func (m *showModel) loadMessages() {
-	if m.activeChat.JID != "" {
-		msgs, err := m.db.GetRecentMessages(m.activeChat.JID, 25)
-		if err == nil {
-			var rev []store.Message
-			for i := len(msgs) - 1; i >= 0; i-- {
-				rev = append(rev, msgs[i])
-			}
-			m.messages = rev
-		}
+	if m.activeChat.JID == "" {
+		m.messages = nil
+		return
+	}
+	msgs, err := m.db.GetRecentMessages(m.activeChat.JID, 30)
+	if err == nil {
+		m.messages = msgs
 	}
 }
 
-// Styling definitions using Lipgloss
-var (
-	purpleColor  = lipgloss.Color("99")
-	darkColor    = lipgloss.Color("238")
-	lightColor   = lipgloss.Color("250")
-	activeBorder = lipgloss.Border{
-		Top:    "─", Bottom: "─", Left: "│", Right: "│",
-		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
-	}
-
-	headerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("255")).
-			Background(purpleColor).
-			Padding(0, 1).
-			Bold(true)
-)
-
 func (m showModel) View() string {
 	if m.quitting {
-		return "Exiting WACLI Dashboard...\n"
-	}
-	if m.err != nil {
-		return fmt.Sprintf("Error initializing dashboard: %v\nPress Esc to exit.", m.err)
+		return "Exiting GhostWA Dashboard...\n"
 	}
 
-	sidebarWidth := 32
-	chatWidth := m.width - sidebarWidth - 6
-	if chatWidth < 20 {
-		chatWidth = 20
+	if m.width == 0 {
+		m.width = 100
+	}
+	if m.height == 0 {
+		m.height = 30
 	}
 
-	searchBorderColor := darkColor
-	if m.focusIdx == 0 {
-		searchBorderColor = purpleColor
-	}
-	searchBox := lipgloss.NewStyle().
-		Border(activeBorder).
-		BorderForeground(searchBorderColor).
-		Width(sidebarWidth).
+	// Palette definitions
+	purpleBg := lipgloss.Color("#7D56F4")
+	neonGreen := lipgloss.Color("#00FFA3")
+	neonPink := lipgloss.Color("#FF007A")
+	headerBg := lipgloss.Color("#24283B")
+	textColor := lipgloss.Color("#C0CAF5")
+	mutedText := lipgloss.Color("#565F89")
+
+	// Header Banner
+	appTitle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(purpleBg).
+		Padding(0, 2).
+		Render("⚡ GhostWA v2.5")
+
+	daemonBadge := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(neonGreen).
+		Background(headerBg).
 		Padding(0, 1).
-		Render("🔍 Search: " + m.searchVal)
+		Render("● ONLINE")
 
-	chatsBorderColor := darkColor
-	if m.focusIdx == 1 {
-		chatsBorderColor = purpleColor
+	headerBar := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		appTitle,
+		"  ",
+		daemonBadge,
+		"  ",
+		lipgloss.NewStyle().Foreground(mutedText).Render("Silent WhatsApp Terminal Workspace"),
+	)
+
+	// Layout Widths
+	sidebarWidth := m.width/3 - 2
+	if sidebarWidth < 28 {
+		sidebarWidth = 28
+	}
+	chatWidth := m.width - sidebarWidth - 5
+	if chatWidth < 40 {
+		chatWidth = 40
 	}
 
+	// 1. Search Box Component
+	searchStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(mutedText).
+		Width(sidebarWidth).
+		Padding(0, 1)
+
+	if m.focusIdx == 0 {
+		searchStyle = searchStyle.BorderForeground(purpleBg)
+	}
+
+	searchContent := "🔍 " + m.searchVal
+	if m.searchVal == "" && m.focusIdx != 0 {
+		searchContent = "🔍 Search chats... [/]"
+	}
+	searchBox := searchStyle.Render(searchContent)
+
+	// 2. Sidebar Chat List Component
 	var listItems []string
 	for idx, c := range m.filtered {
-		badge := ""
-		if c.UnreadCount > 0 {
-			badge = fmt.Sprintf(" [%d]", c.UnreadCount)
+		timeStr := ""
+		if !c.LastMessageTime.IsZero() {
+			timeStr = c.LastMessageTime.Local().Format("15:04")
 		}
-		itemText := fmt.Sprintf("• %s%s", c.Name, badge)
-		if len(itemText) > sidebarWidth-2 {
-			itemText = itemText[:sidebarWidth-5] + "..."
+
+		unreadBadge := ""
+		if c.UnreadCount > 0 {
+			unreadBadge = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(neonPink).
+				Bold(true).
+				Padding(0, 1).
+				Render(fmt.Sprintf("%d", c.UnreadCount))
+		}
+
+		nameText := c.Name
+		if len(nameText) > sidebarWidth-12 {
+			nameText = nameText[:sidebarWidth-15] + "..."
+		}
+
+		itemHeader := fmt.Sprintf("%-18s %5s", nameText, timeStr)
+		if unreadBadge != "" {
+			itemHeader = fmt.Sprintf("%-14s %s", nameText, unreadBadge)
 		}
 
 		if idx == m.selectedIdx && m.focusIdx == 1 {
 			listItems = append(listItems, lipgloss.NewStyle().
-				Foreground(lipgloss.Color("255")).
-				Background(purpleColor).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Background(purpleBg).
 				Bold(true).
-				Render(itemText))
+				Padding(0, 1).
+				Render("❯ "+itemHeader))
 		} else if idx == m.selectedIdx {
 			listItems = append(listItems, lipgloss.NewStyle().
-				Foreground(purpleColor).
+				Foreground(purpleBg).
 				Bold(true).
-				Render(itemText))
+				Padding(0, 1).
+				Render("❯ "+itemHeader))
 		} else {
 			listItems = append(listItems, lipgloss.NewStyle().
-				Foreground(lightColor).
-				Render(itemText))
+				Foreground(textColor).
+				Padding(0, 1).
+				Render("  "+itemHeader))
 		}
 	}
 
-	listHeight := m.height - 8
+	listHeight := m.height - 10
 	if listHeight < 5 {
 		listHeight = 5
 	}
+
+	chatListBorderColor := mutedText
+	if m.focusIdx == 1 {
+		chatListBorderColor = purpleBg
+	}
+
 	chatsList := lipgloss.NewStyle().
-		Border(activeBorder).
-		BorderForeground(chatsBorderColor).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(chatListBorderColor).
 		Width(sidebarWidth).
 		Height(listHeight).
 		Render(strings.Join(listItems, "\n"))
 
 	sidebar := lipgloss.JoinVertical(lipgloss.Left, searchBox, chatsList)
 
+	// 3. Right Chat Panel Component
+	chatHeaderTitle := "Select a conversation to view messages"
+	if m.activeChat.Name != "" {
+		chatHeaderTitle = "💬 " + m.activeChat.Name + " (" + m.activeChat.JID + ")"
+	}
+
 	chatHeader := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("255")).
-		Background(lipgloss.Color("236")).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(headerBg).
 		Width(chatWidth + 2).
 		Padding(0, 1).
 		Bold(true).
-		Render("👤 " + m.activeChat.Name)
+		Render(chatHeaderTitle)
 
 	var messageLines []string
 	for _, msg := range m.messages {
@@ -326,97 +403,115 @@ func (m showModel) View() string {
 				sender = "+" + parts[0]
 			}
 		}
+
 		reactionStr := ""
 		if msg.Reaction != "" {
-			reactionStr = "  " + msg.Reaction
+			reactionStr = " " + lipgloss.NewStyle().Foreground(lipgloss.Color("#FFD700")).Bold(true).Render("["+msg.Reaction+"]")
 		}
-		line := fmt.Sprintf("[%s] %s: %s%s", timeStr, sender, msg.Content, reactionStr)
+
+		var line string
+		if msg.IsFromMe {
+			msgText := lipgloss.NewStyle().Foreground(neonGreen).Bold(true).Render(msg.Content)
+			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, lipgloss.NewStyle().Foreground(neonGreen).Render("You"), msgText, reactionStr)
+		} else {
+			senderTag := lipgloss.NewStyle().Foreground(purpleBg).Bold(true).Render(sender)
+			line = fmt.Sprintf("[%s] %s: %s%s", timeStr, senderTag, msg.Content, reactionStr)
+		}
 		messageLines = append(messageLines, line)
 	}
 
-	historyHeight := m.height - 9
+	historyHeight := m.height - 11
 	if historyHeight < 5 {
 		historyHeight = 5
 	}
 	historyBox := lipgloss.NewStyle().
-		Border(activeBorder).
-		BorderForeground(darkColor).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(mutedText).
 		Width(chatWidth).
 		Height(historyHeight).
 		Render(strings.Join(messageLines, "\n"))
 
-	inputBorderColor := darkColor
-	if m.focusIdx == 2 {
-		inputBorderColor = purpleColor
-	}
-	inputBox := lipgloss.NewStyle().
-		Border(activeBorder).
-		BorderForeground(inputBorderColor).
+	// 4. Input Box Component
+	inputBorderStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(mutedText).
 		Width(chatWidth).
-		Padding(0, 1).
-		Render("💬 Msg: " + m.messageVal)
+		Padding(0, 1)
 
-	chatPane := lipgloss.JoinVertical(lipgloss.Left, chatHeader, historyBox, inputBox)
-	dashboardLayout := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, chatPane)
+	if m.focusIdx == 2 {
+		inputBorderStyle = inputBorderStyle.BorderForeground(neonGreen)
+	}
 
-	appHeader := headerStyle.Render(" WACLI Terminal Dashboard ")
-	return appHeader + "\n" + dashboardLayout
+	inputPrompt := "❯ " + m.messageVal
+	if m.messageVal == "" && m.focusIdx != 2 {
+		inputPrompt = "❯ Type a message... [Press Tab or Click to Focus]"
+	}
+	inputBox := inputBorderStyle.Render(inputPrompt)
+
+	chatPanel := lipgloss.JoinVertical(lipgloss.Left, chatHeader, historyBox, inputBox)
+
+	// Combine Left Sidebar and Right Main Panel
+	mainBody := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, " ", chatPanel)
+
+	// Footer Help Bar
+	footerLegend := lipgloss.NewStyle().
+		Foreground(mutedText).
+		Render("[Tab] Switch Focus  │  [d] Delete Chat  │  [/] Search  │  [Esc] Quit")
+
+	return lipgloss.JoinVertical(lipgloss.Left, headerBar, "\n", mainBody, "\n", footerLegend)
 }
 
-// runShow boots the Charm Bubble Tea TUI app.
+// runShow launches the redesigned TUI Dashboard.
 func runShow(stdout, stderr io.Writer) int {
-	dataDir, err := store.GetDefaultDataDir()
+	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintf(stderr, "Error resolving data directory: %v\n", err)
+		fmt.Fprintf(stderr, "Error resolving home directory: %v\n", err)
 		return 1
 	}
-
+	dataDir := filepath.Join(home, ".local", "share", "wacli")
 	dbPath := filepath.Join(dataDir, "messages.db")
+
 	s, err := store.NewStore(dbPath)
 	if err != nil {
-		fmt.Fprintf(stderr, "Error opening database: %v\n", err)
+		fmt.Fprintf(stderr, "Error opening messages database: %v\n", err)
 		return 1
 	}
+	defer s.Close()
 
-	conn, err := net.Dial("tcp", "127.0.0.1:9090")
-	if err != nil {
-		s.Close()
-		fmt.Fprintf(stderr, "Error: Daemon is offline. Please run 'wacli daemon start' first.\n")
-		return 1
+	conn, _ := net.Dial("tcp", "127.0.0.1:9090")
+	if conn != nil {
+		req := wadaemon.Request{Type: "subscribe"}
+		data, _ := json.Marshal(req)
+		_, _ = conn.Write(append(data, '\n'))
 	}
 
-	req := wadaemon.Request{Type: "subscribe"}
-	reqData, _ := json.Marshal(req)
-	_, _ = conn.Write(append(reqData, '\n'))
-
-	reader := bufio.NewReader(conn)
-	_, _ = reader.ReadBytes('\n')
-
-	initialModel := showModel{
-		db:        s,
-		conn:      conn,
-		focusIdx:  1,
-		searchVal: "",
+	m := showModel{
+		db:       s,
+		conn:     conn,
+		focusIdx: 1,
 	}
-	initialModel.reloadChats()
+	m.reloadChats()
 
-	p := tea.NewProgram(initialModel, tea.WithAltScreen())
-
-	go func() {
-		for {
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				break
+	if conn != nil {
+		go func() {
+			reader := bufio.NewReader(conn)
+			for {
+				line, err := reader.ReadBytes('\n')
+				if err != nil {
+					break
+				}
+				var evt wadaemon.Event
+				if err := json.Unmarshal(line, &evt); err == nil && evt.Type != "" {
+					p := tea.NewProgram(m)
+					p.Send(incomingMsg(evt))
+				}
 			}
-			var evt wadaemon.Event
-			if err := json.Unmarshal(line, &evt); err == nil {
-				p.Send(incomingMsg(evt))
-			}
-		}
-	}()
+		}()
+	}
 
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintf(stderr, "Error running TUI dashboard: %v\n", err)
+		fmt.Fprintf(stderr, "Error running TUI: %v\n", err)
 		return 1
 	}
 

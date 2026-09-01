@@ -32,6 +32,7 @@ type Server struct {
 	subMutex    sync.Mutex
 	listener    net.Listener
 	stopChan    chan struct{}
+	dataDir     string
 }
 
 // NewServer initializes a new background daemon server.
@@ -53,6 +54,7 @@ func NewServer(dataDir string) (*Server, error) {
 		client:      cli,
 		subscribers: make(map[net.Conn]bool),
 		stopChan:    make(chan struct{}),
+		dataDir:     dataDir,
 	}, nil
 }
 
@@ -132,6 +134,8 @@ func (s *Server) handleConnection(conn net.Conn) {
 			s.handleStatus(conn)
 		case "login":
 			s.handleLogin(conn)
+		case "login_phone":
+			s.handleLoginPhone(conn, req)
 		case "logout":
 			s.handleLogout(conn)
 		case "send":
@@ -213,24 +217,43 @@ func (s *Server) handleLogin(conn net.Conn) {
 }
 
 func (s *Server) handleLogout(conn net.Conn) {
-	if !s.client.IsLoggedIn() {
-		s.sendError(conn, "device is not logged in")
-		return
+	if s.client.IsLoggedIn() {
+		_ = s.client.GetWhatsmeowClient().Logout(context.Background())
 	}
-
-	err := s.client.GetWhatsmeowClient().Logout(context.Background())
-	if err != nil {
-		s.sendError(conn, fmt.Sprintf("failed to perform logout: %v", err))
-		return
-	}
+	s.client.Disconnect()
+	// Force-wipe session.db file so daemon resets completely to not_logged_in
+	sessionPath := filepath.Join(s.dataDir, "session.db")
+	_ = os.Remove(sessionPath)
 
 	_ = s.sendResponse(conn, Response{Success: true})
-	log.Println("Device logged out and unlinked successfully. Shutting down daemon.")
+	log.Println("Device logged out cleanly. Shutting down daemon.")
 
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		s.Stop()
 	}()
+}
+
+func (s *Server) handleLoginPhone(conn net.Conn, req Request) {
+	if s.client.IsLoggedIn() {
+		s.sendError(conn, "device is already logged in")
+		return
+	}
+	if req.Body == "" {
+		s.sendError(conn, "phone number required for pairing code")
+		return
+	}
+
+	code, err := s.client.PairPhone(req.Body)
+	if err != nil {
+		s.sendError(conn, fmt.Sprintf("failed to get pairing code: %v", err))
+		return
+	}
+
+	s.sendResponse(conn, Response{
+		Success: true,
+		Code:    code,
+	})
 }
 
 func (s *Server) handleSend(conn net.Conn, req Request) {

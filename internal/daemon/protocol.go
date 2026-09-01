@@ -16,6 +16,7 @@ type Response struct {
 	Status  string `json:"status,omitempty"` // "not_logged_in", "disconnected", "connected"
 	Phone   string `json:"phone,omitempty"`
 	MsgID   string `json:"msg_id,omitempty"`
+	Code    string `json:"code,omitempty"`   // Pairing code for phone login
 }
 
 // Event represents an asynchronous streaming event pushed from the daemon to subscribed clients.

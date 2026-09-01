@@ -1,17 +1,16 @@
-# GhostWA & WACLI Automated One-Line Installer for Windows (PowerShell)
+# GhostWA Automated One-Line Installer for Windows (PowerShell)
 # Usage: irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.ps1 | iex
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 Write-Host ""
 Write-Host "  ┌────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
-Write-Host "  │   ⚡ GhostWA (v2.5) & WACLI (v2.0) Auto-Installer     │" -ForegroundColor Cyan
+Write-Host "  │   ⚡ GhostWA v2.5 - Single Command Auto-Installer     │" -ForegroundColor Cyan
 Write-Host "  └────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
 Write-Host ""
 
 $installDir = "$env:LOCALAPPDATA\Programs\ghostwa"
 $ghostwaPath = "$installDir\ghostwa.exe"
-$wacliPath = "$installDir\wacli.exe"
 
 # 1. Ensure Installation Directory Exists
 if (!(Test-Path $installDir)) {
@@ -46,26 +45,22 @@ function Download-Binary {
 $hasGo = Get-Command "go" -ErrorAction SilentlyContinue
 
 if ($hasGo) {
-    Write-Host "[1/3] Go detected! Compiling and installing latest GhostWA & WACLI binaries..." -ForegroundColor Yellow
+    Write-Host "[1/3] Go detected! Compiling and installing latest GhostWA binary..." -ForegroundColor Yellow
     & go install github.com/Manan0708/GhostWA/cmd/ghostwa@latest
     
     $gopathBin = "$env:USERPROFILE\go\bin\ghostwa.exe"
     if (Test-Path $gopathBin) {
         Copy-Item $gopathBin $ghostwaPath -Force
-        Copy-Item $gopathBin $wacliPath -Force
     }
 } else {
-    Write-Host "[1/3] Downloading pre-compiled GhostWA (v2.5) and WACLI (v2.0) executables..." -ForegroundColor Yellow
+    Write-Host "[1/3] Downloading pre-compiled GhostWA v2.5 executable..." -ForegroundColor Yellow
     
     $urlGhostWA = "https://raw.githubusercontent.com/Manan0708/GhostWA/main/bin/ghostwa-v2.5.exe"
-    $urlWACLI   = "https://raw.githubusercontent.com/Manan0708/GhostWA/main/bin/wacli-v2.0.exe"
-    
-    $dl1 = Download-Binary -url $urlGhostWA -outFile $ghostwaPath
-    $dl2 = Download-Binary -url $urlWACLI   -outFile $wacliPath
+    $dl = Download-Binary -url $urlGhostWA -outFile $ghostwaPath
     
     # If binary download fails, attempt to install Go automatically via winget
-    if (-not $dl1) {
-        Write-Host "[-] Pre-compiled download pending. Installing Go compiler environment automatically..." -ForegroundColor Yellow
+    if (-not $dl) {
+        Write-Host "[-] Installing Go compiler environment automatically..." -ForegroundColor Yellow
         $hasWinget = Get-Command "winget" -ErrorAction SilentlyContinue
         if ($hasWinget) {
             & winget install --id GoLang.Go -e --source winget --accept-source-agreements --accept-package-agreements --silent
@@ -76,7 +71,6 @@ if ($hasGo) {
                 $gopathBin = "$env:USERPROFILE\go\bin\ghostwa.exe"
                 if (Test-Path $gopathBin) {
                     Copy-Item $gopathBin $ghostwaPath -Force
-                    Copy-Item $gopathBin $wacliPath -Force
                 }
             }
         }
@@ -90,11 +84,6 @@ if (!(Test-Path $ghostwaPath)) {
         Copy-Item $localGhostWA $ghostwaPath -Force
     }
 }
-if (!(Test-Path $wacliPath)) {
-    if (Test-Path $ghostwaPath) {
-        Copy-Item $ghostwaPath $wacliPath -Force
-    }
-}
 
 if (!(Test-Path $ghostwaPath)) {
     Write-Host "[-] Installation failed. Could not locate or download ghostwa.exe executable." -ForegroundColor Red
@@ -102,7 +91,7 @@ if (!(Test-Path $ghostwaPath)) {
 }
 
 # 3. Add install directory to User PATH environment variable
-Write-Host "[2/3] Registering 'ghostwa' and 'wacli' in User Environment PATH..." -ForegroundColor Yellow
+Write-Host "[2/3] Registering 'ghostwa' in User Environment PATH..." -ForegroundColor Yellow
 $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($userPath -notlike "*$installDir*") {
     $newPath = "$userPath;$installDir"
@@ -118,10 +107,10 @@ if (!(Test-Path $dataDir)) {
 
 Write-Host "[3/3] Finalizing setup..." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  ✅ GhostWA (v2.5) & WACLI (v2.0) Installed Successfully!" -ForegroundColor Green
+Write-Host "  ✅ GhostWA v2.5 Installed Successfully!" -ForegroundColor Green
 Write-Host "  ------------------------------------------------------------" -ForegroundColor Gray
-Write-Host "  Both 'ghostwa' and 'wacli' commands are now active on your system:" -ForegroundColor White
-Write-Host "    1. Type: " -NoNewline; Write-Host "ghostwa login" -ForegroundColor Cyan -NoNewline; Write-Host " or " -NoNewline; Write-Host "wacli login" -ForegroundColor Cyan -NoNewline; Write-Host " (to scan QR code)"
+Write-Host "  To start using GhostWA immediately:" -ForegroundColor White
+Write-Host "    1. Type: " -NoNewline; Write-Host "ghostwa login" -ForegroundColor Cyan -NoNewline; Write-Host " (to link device via QR or Phone pairing)"
 Write-Host "    2. Type: " -NoNewline; Write-Host "ghostwa daemon start" -ForegroundColor Cyan -NoNewline; Write-Host " (to launch background service)"
 Write-Host "    3. Type: " -NoNewline; Write-Host "ghostwa show" -ForegroundColor Cyan -NoNewline; Write-Host " (to open interactive TUI dashboard)"
 Write-Host "  ------------------------------------------------------------" -ForegroundColor Gray

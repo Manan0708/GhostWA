@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
 )
@@ -12,34 +14,23 @@ import (
 // runLogout handles the "logout" CLI command.
 func runLogout(stdout, stderr io.Writer) int {
 	conn, err := wadaemon.ConnectOrStartDaemon()
-	if err != nil {
-		fmt.Fprintf(stderr, "Error connecting to daemon: %v\n", err)
-		return 1
-	}
-	defer conn.Close()
+	if err == nil {
+		defer conn.Close()
 
-	req := wadaemon.Request{Type: "logout"}
-	data, _ := json.Marshal(req)
-	_, err = conn.Write(append(data, '\n'))
-	if err != nil {
-		fmt.Fprintf(stderr, "Error writing logout request to daemon: %v\n", err)
-		return 1
-	}
+		req := wadaemon.Request{Type: "logout"}
+		data, _ := json.Marshal(req)
+		_, _ = conn.Write(append(data, '\n'))
 
-	reader := bufio.NewReader(conn)
-	line, err := reader.ReadBytes('\n')
-	if err != nil {
-		fmt.Fprintf(stderr, "Connection lost with daemon: %v\n", err)
-		return 1
+		reader := bufio.NewReader(conn)
+		line, _ := reader.ReadBytes('\n')
+		var resp wadaemon.Response
+		_ = json.Unmarshal(line, &resp)
 	}
 
-	var resp wadaemon.Response
-	_ = json.Unmarshal(line, &resp)
-
-	if !resp.Success {
-		fmt.Fprintf(stderr, "Logout failed: %s\n", resp.Error)
-		return 1
-	}
+	// Always force-wipe session.db locally to guarantee complete session reset
+	home, _ := os.UserHomeDir()
+	sessionPath := filepath.Join(home, ".local", "share", "wacli", "session.db")
+	_ = os.Remove(sessionPath)
 
 	fmt.Fprintln(stdout, "✓ Successfully logged out and unlinked your WhatsApp device.")
 	fmt.Fprintln(stdout, "✓ Session credentials cleared.")

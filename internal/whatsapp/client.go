@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Manan0708/GhostWA/internal/store"
-	_ "modernc.org/sqlite"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	_ "modernc.org/sqlite"
 )
 
 // Client wraps the whatsmeow Client, its underlying sqlstore Container, and the application store.
@@ -103,4 +104,45 @@ func (c *Client) PhoneNumber() string {
 // GetWhatsmeowClient returns the raw whatsmeow client instance for advanced operations.
 func (c *Client) GetWhatsmeowClient() *whatsmeow.Client {
 	return c.whatsmeowClient
+}
+
+// PairPhone requests an 8-digit pairing code to link a device using a phone number.
+func (c *Client) PairPhone(phone string) (string, error) {
+	if !c.whatsmeowClient.IsConnected() {
+		err := c.whatsmeowClient.Connect()
+		if err != nil {
+			return "", fmt.Errorf("failed to connect to WhatsApp servers: %w", err)
+		}
+	}
+	code, err := c.whatsmeowClient.PairPhone(context.Background(), phone, true, whatsmeow.PairClientChrome, "GhostWA Terminal")
+	if err != nil {
+		return "", fmt.Errorf("failed to generate phone pairing code: %w", err)
+	}
+	return code, nil
+}
+
+// SyncStoreContacts queries Whatsmeow's contact cache store and populates local SQLite contacts table.
+func (c *Client) SyncStoreContacts() {
+	if c.store == nil || c.whatsmeowClient == nil || c.whatsmeowClient.Store == nil {
+		return
+	}
+	contacts, err := c.whatsmeowClient.Store.Contacts.GetAllContacts(context.Background())
+	if err != nil {
+		return
+	}
+	for jid, info := range contacts {
+		if jid.IsEmpty() {
+			continue
+		}
+		resolved := c.ResolveLIDToPN(context.Background(), jid)
+		resJID := resolved.String()
+		contactName := info.FullName
+		if contactName == "" {
+			contactName = info.PushName
+		}
+		if contactName != "" {
+			_ = c.store.UpsertContact(resJID, contactName, resolved.User, info.PushName)
+			_ = c.store.UpsertChat(resJID, contactName, time.Now())
+		}
+	}
 }
