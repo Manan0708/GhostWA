@@ -20,8 +20,8 @@ func TestRunNoArgsPrintsWACLI(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0", code)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "GhostWA v2.5.5 — Silent, High-Performance WhatsApp Terminal Client" {
-		t.Fatalf("stdout = %q, want %q", got, "GhostWA v2.5.5 — Silent, High-Performance WhatsApp Terminal Client")
+	if got := strings.TrimSpace(stdout.String()); got != "GhostWA v2.5.6 — Silent, High-Performance WhatsApp Terminal Client" {
+		t.Fatalf("stdout = %q, want %q", got, "GhostWA v2.5.6 — Silent, High-Performance WhatsApp Terminal Client")
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
@@ -111,7 +111,7 @@ func TestRunChats(t *testing.T) {
 	if !strings.Contains(out, "Chats") {
 		t.Fatalf("chats output missing title:\n%s", out)
 	}
-	if !strings.Contains(out, "No active chats found.") {
+	if !strings.Contains(out, "No saved chats found.") {
 		t.Fatalf("chats output missing empty state:\n%s", out)
 	}
 }
