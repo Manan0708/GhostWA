@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	wadaemon "github.com/Manan0708/wacli/internal/daemon"
-	"github.com/Manan0708/wacli/internal/resolver"
-	"github.com/Manan0708/wacli/internal/store"
+	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
+	"github.com/Manan0708/GhostWA/internal/resolver"
+	"github.com/Manan0708/GhostWA/internal/store"
 	"golang.org/x/term"
 )
 

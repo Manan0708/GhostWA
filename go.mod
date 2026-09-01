@@ -1,4 +1,4 @@
-module github.com/Manan0708/wacli
+module github.com/Manan0708/GhostWA
 
 go 1.27.0
 

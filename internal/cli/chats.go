@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Manan0708/wacli/internal/store"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 // runChats handles the "chats" command to show direct chats (excluding groups).

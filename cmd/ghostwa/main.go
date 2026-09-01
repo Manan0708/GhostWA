@@ -7,7 +7,7 @@ package main
 import (
 	"os"
 
-	"github.com/Manan0708/wacli/internal/cli"
+	"github.com/Manan0708/GhostWA/internal/cli"
 )
 
 func main() {

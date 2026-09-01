@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Manan0708/wacli/internal/resolver"
-	"github.com/Manan0708/wacli/internal/store"
-	"github.com/Manan0708/wacli/internal/whatsapp"
+	"github.com/Manan0708/GhostWA/internal/resolver"
+	"github.com/Manan0708/GhostWA/internal/store"
+	"github.com/Manan0708/GhostWA/internal/whatsapp"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"

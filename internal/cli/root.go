@@ -24,7 +24,7 @@ import (
 // The return value is the process exit code: 0 means success, non-zero means failure.
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "WACLI")
+		fmt.Fprintln(stdout, "GhostWA v2.5 — Silent, High-Performance WhatsApp Terminal Client")
 		return 0
 	}
 
@@ -64,29 +64,29 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runListen(stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", args[0])
-		fmt.Fprintln(stderr, "Run 'wacli --help' for usage.")
+		fmt.Fprintln(stderr, "Run 'ghostwa --help' for usage.")
 		return 1
 	}
 }
 
 func printHelp(w io.Writer) {
-	fmt.Fprintln(w, "WACLI — lightweight WhatsApp terminal client")
+	fmt.Fprintln(w, "GhostWA v2.5 — Stealthy, High-Performance WhatsApp Terminal Suite")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  wacli              Print WACLI")
-	fmt.Fprintln(w, "  wacli --help       Show this help")
-	fmt.Fprintln(w, "  wacli login        Link a WhatsApp device by scanning QR code")
-	fmt.Fprintln(w, "  wacli logout       Unlink your WhatsApp device and delete session")
-	fmt.Fprintln(w, "  wacli status       Show login and connection status")
-	fmt.Fprintln(w, "  wacli chats        Show all direct chat conversations")
-	fmt.Fprintln(w, "  wacli groups       Show all group conversations")
-	fmt.Fprintln(w, "  wacli contacts     Show list of registered contacts")
-	fmt.Fprintln(w, "  wacli commands     List all available commands")
-	fmt.Fprintln(w, "  wacli show         Launch the interactive TUI Dashboard")
-	fmt.Fprintln(w, "  wacli daemon <cmd> Manage the background daemon (start|stop|restart)")
-	fmt.Fprintln(w, "  wacli add-contact <name> <phone> Register a friend's contact name")
-	fmt.Fprintln(w, "  wacli open <chat> [limit] Open an interactive conversation (limit defaults to 3)")
-	fmt.Fprintln(w, "  wacli search <text> Search chat names and message contents")
-	fmt.Fprintln(w, "  wacli send <to> <msg> Send a text message or local media file")
-	fmt.Fprintln(w, "  wacli listen       Listen for incoming text messages in real-time")
+	fmt.Fprintln(w, "  ghostwa               Print GhostWA version banner")
+	fmt.Fprintln(w, "  ghostwa --help        Show this help screen")
+	fmt.Fprintln(w, "  ghostwa login         Link a WhatsApp device by scanning QR code")
+	fmt.Fprintln(w, "  ghostwa logout        Unlink your WhatsApp device and delete session")
+	fmt.Fprintln(w, "  ghostwa status        Show login and daemon connection status")
+	fmt.Fprintln(w, "  ghostwa chats         Show all direct chat conversations")
+	fmt.Fprintln(w, "  ghostwa groups        Show all group conversations")
+	fmt.Fprintln(w, "  ghostwa contacts      Show list of registered contacts")
+	fmt.Fprintln(w, "  ghostwa commands      List all available commands")
+	fmt.Fprintln(w, "  ghostwa show          Launch the interactive TUI Dashboard")
+	fmt.Fprintln(w, "  ghostwa daemon <cmd>  Manage background daemon (start|stop|restart)")
+	fmt.Fprintln(w, "  ghostwa add-contact   Register a friend's contact name")
+	fmt.Fprintln(w, "  ghostwa open <chat>   Open an interactive conversation")
+	fmt.Fprintln(w, "  ghostwa search <text> Search chat names and message contents")
+	fmt.Fprintln(w, "  ghostwa send <to>     Send a text message or local media file")
+	fmt.Fprintln(w, "  ghostwa listen        Listen for incoming text messages in real-time")
 }

@@ -1,26 +1,26 @@
-# WACLI (WhatsApp Command Line Interface & TUI Dashboard)
+# GhostWA v2.5 (Stealthy WhatsApp Terminal Suite & TUI Dashboard)
 
-WACLI is a high-performance, developer-focused terminal client and user interface for WhatsApp. Engineered in Go, WACLI leverages a decoupled **client-server architecture** using a persistent background daemon, a local SQLite database running in **WAL (Write-Ahead Logging)** mode, a TCP-based JSON IPC protocol, and interactive terminal interfaces built with Charm's **Bubble Tea** and **Lip Gloss** frameworks.
+GhostWA is a high-performance, developer-focused terminal client and stealthy background messaging suite for WhatsApp. Engineered in Go, GhostWA leverages a decoupled **client-server architecture** using a persistent background daemon, a local SQLite database running in **WAL (Write-Ahead Logging)** mode, a TCP-based JSON IPC protocol, and interactive terminal interfaces built with Charm's **Bubble Tea** and **Lip Gloss** frameworks.
 
 ---
 
 ## ⚡ 1-Line Quick Installation (No Go Required!)
 
-You can install and set up WACLI on any machine with a **single command**. No programming tools or Go installations required!
+You can install and set up GhostWA on any machine with a **single command**. No programming tools or Go installations required!
 
 ### Windows (PowerShell)
 Paste this into PowerShell or VS Code Terminal:
 ```powershell
-irm https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.ps1 | iex
 ```
 
 ### Linux / macOS (Bash)
 Paste this into Terminal:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.sh | sh
 ```
 
-Once installed, simply run `wacli login` to scan your QR code and get started!
+Once installed, simply run `ghostwa login` to scan your QR code and get started!
 
 ---
 

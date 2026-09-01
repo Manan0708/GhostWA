@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	wadaemon "github.com/Manan0708/wacli/internal/daemon"
-	"github.com/Manan0708/wacli/internal/store"
+	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
+	"github.com/Manan0708/GhostWA/internal/store"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )

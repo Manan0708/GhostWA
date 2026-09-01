@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	wadaemon "github.com/Manan0708/wacli/internal/daemon"
+	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
 )
 
 // runStatus queries the background daemon for the current synchronization state.

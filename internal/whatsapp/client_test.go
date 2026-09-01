@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Manan0708/wacli/internal/store"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 func TestNewClient(t *testing.T) {

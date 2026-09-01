@@ -3,7 +3,7 @@ package resolver
 import (
 	"testing"
 
-	"github.com/Manan0708/wacli/internal/store"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 func TestResolveDirectJID(t *testing.T) {

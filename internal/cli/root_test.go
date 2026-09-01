@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Manan0708/wacli/internal/store"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 func TestRunNoArgsPrintsWACLI(t *testing.T) {
@@ -20,8 +20,8 @@ func TestRunNoArgsPrintsWACLI(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0", code)
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "WACLI" {
-		t.Fatalf("stdout = %q, want %q", got, "WACLI")
+	if got := strings.TrimSpace(stdout.String()); got != "GhostWA v2.5 — Silent, High-Performance WhatsApp Terminal Client" {
+		t.Fatalf("stdout = %q, want %q", got, "GhostWA v2.5 — Silent, High-Performance WhatsApp Terminal Client")
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())

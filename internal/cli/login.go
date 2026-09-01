@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	wadaemon "github.com/Manan0708/wacli/internal/daemon"
+	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
 	"github.com/mdp/qrterminal/v3"
 )
 

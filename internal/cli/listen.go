@@ -11,8 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	wadaemon "github.com/Manan0708/wacli/internal/daemon"
-	"github.com/Manan0708/wacli/internal/store"
+	wadaemon "github.com/Manan0708/GhostWA/internal/daemon"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 // runListen streams and prints real-time messages forwarded by the background daemon.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Manan0708/wacli/internal/store"
+	"github.com/Manan0708/GhostWA/internal/store"
 )
 
 // runAddContact handles the "add-contact" command: wacli add-contact <name> <phone_number>

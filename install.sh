@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
-# WACLI One-Line Automated Installer for Linux & macOS
-# Usage: curl -fsSL https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/install.sh | sh
+# GhostWA One-Line Automated Installer for Linux & macOS
+# Usage: curl -fsSL https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.sh | sh
 
 set -e
 
 echo ""
 echo "  ┌──────────────────────────────────────────────┐"
-echo "  │   ⚡  WACLI - WhatsApp CLI Auto-Installer    │"
+echo "  │   ⚡  GhostWA v2.5 - Auto-Installer          │"
 echo "  └──────────────────────────────────────────────┘"
 echo ""
 
@@ -14,34 +14,34 @@ INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
 if command -v go >/dev/null 2>&1; then
-    echo "[1/3] Go detected! Compiling and installing latest WACLI binary..."
-    go install github.com/Manan0708/wacli/cmd/wacli@latest
-    if [ -f "$HOME/go/bin/wacli" ]; then
-        cp "$HOME/go/bin/wacli" "$INSTALL_DIR/wacli"
+    echo "[1/3] Go detected! Compiling and installing latest GhostWA binary..."
+    go install github.com/Manan0708/GhostWA/cmd/ghostwa@latest
+    if [ -f "$HOME/go/bin/ghostwa" ]; then
+        cp "$HOME/go/bin/ghostwa" "$INSTALL_DIR/ghostwa"
     fi
 else
-    echo "[1/3] Go not found on system. Downloading pre-compiled WACLI executable..."
-    curl -fsSL "https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/bin/wacli" -o "$INSTALL_DIR/wacli" || true
+    echo "[1/3] Go not found on system. Downloading pre-compiled GhostWA v2.5 executable..."
+    curl -fsSL "https://raw.githubusercontent.com/Manan0708/GhostWA/main/bin/ghostwa" -o "$INSTALL_DIR/ghostwa" || true
 fi
 
-if [ -f "$INSTALL_DIR/wacli" ]; then
-    chmod +x "$INSTALL_DIR/wacli"
+if [ -f "$INSTALL_DIR/ghostwa" ]; then
+    chmod +x "$INSTALL_DIR/ghostwa"
 else
-    echo "[-] Installation failed. Could not locate or download wacli binary."
+    echo "[-] Installation failed. Could not locate or download ghostwa binary."
     exit 1
 fi
 
 # Ensure data directory exists
 mkdir -p "$HOME/.local/share/wacli"
 
-echo "[2/3] Registering WACLI in PATH..."
+echo "[2/3] Registering GhostWA in PATH..."
 echo "[3/3] Finalizing setup..."
 echo ""
-echo "  ✅ WACLI Installed Successfully!"
+echo "  ✅ GhostWA v2.5 Installed Successfully!"
 echo "  ------------------------------------------------"
-echo "  To start using WACLI immediately:"
-echo "    1. Type: wacli login"
-echo "    2. Type: wacli daemon start"
-echo "    3. Type: wacli show"
+echo "  To start using GhostWA immediately:"
+echo "    1. Type: ghostwa login"
+echo "    2. Type: ghostwa daemon start"
+echo "    3. Type: ghostwa show"
 echo "  ------------------------------------------------"
 echo ""
