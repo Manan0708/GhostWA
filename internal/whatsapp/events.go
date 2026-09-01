@@ -46,7 +46,7 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 				// Loop through and persist historical messages
 				for _, historyMsg := range conv.GetMessages() {
 					parsedEvt, err := c.whatsmeowClient.ParseWebMessage(chatJID, historyMsg.GetMessage())
-					if err != nil {
+					if err != nil || parsedEvt == nil || parsedEvt.Message == nil {
 						continue
 					}
 
