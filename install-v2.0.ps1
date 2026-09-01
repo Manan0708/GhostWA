@@ -1,16 +1,19 @@
-# WACLI Stable v2.0 Automated One-Line Installer for Windows (PowerShell)
+# GhostWA Stable v2.0 Automated One-Line Installer for Windows (PowerShell)
 # Usage: irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install-v2.0.ps1 | iex
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 Write-Host ""
 Write-Host "  ┌────────────────────────────────────────────────────────┐" -ForegroundColor Cyan
-Write-Host "  │   🔒 WACLI v2.0 (Stable Release) - Auto-Installer      │" -ForegroundColor Cyan
+Write-Host "  │   🔒 GhostWA v2.0 (Stable Release) - Auto-Installer    │" -ForegroundColor Cyan
 Write-Host "  └────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
 Write-Host ""
 
-$installDir = "$env:LOCALAPPDATA\Programs\wacli"
-$wacliPath = "$installDir\wacli.exe"
+$installDir = "$env:LOCALAPPDATA\Programs\ghostwa"
+$ghostwaPath = "$installDir\ghostwa.exe"
+
+# Stop any running daemon process first
+Stop-Process -Name "ghostwa*" -Force -ErrorAction SilentlyContinue
 
 # 1. Ensure Installation Directory Exists
 if (!(Test-Path $installDir)) {
@@ -39,25 +42,25 @@ function Download-Binary {
     return $false
 }
 
-Write-Host "[1/3] Downloading stable WACLI v2.0 pre-compiled executable..." -ForegroundColor Yellow
-$urlWACLI = "https://raw.githubusercontent.com/Manan0708/GhostWA/main/bin/wacli-v2.0.exe"
-$dl = Download-Binary -url $urlWACLI -outFile $wacliPath
+Write-Host "[1/3] Downloading stable GhostWA v2.0 pre-compiled executable..." -ForegroundColor Yellow
+$urlGhostWA = "https://raw.githubusercontent.com/Manan0708/GhostWA/main/bin/ghostwa-v2.0.exe"
+$dl = Download-Binary -url $urlGhostWA -outFile $ghostwaPath
 
 # Fallback: Check local repo bin directory if script is run locally
-if (!(Test-Path $wacliPath)) {
-    $localWACLI = Join-Path $PSScriptRoot "bin\wacli-v2.0.exe"
-    if (Test-Path $localWACLI) {
-        Copy-Item $localWACLI $wacliPath -Force
+if (!(Test-Path $ghostwaPath)) {
+    $localGhostWA = Join-Path $PSScriptRoot "bin\ghostwa-v2.0.exe"
+    if (Test-Path $localGhostWA) {
+        Copy-Item $localGhostWA $ghostwaPath -Force
     }
 }
 
-if (!(Test-Path $wacliPath)) {
-    Write-Host "[-] Installation failed. Could not locate or download wacli-v2.0.exe executable." -ForegroundColor Red
+if (!(Test-Path $ghostwaPath)) {
+    Write-Host "[-] Installation failed. Could not locate or download ghostwa-v2.0.exe executable." -ForegroundColor Red
     exit 1
 }
 
 # 2. Add install directory to User PATH environment variable
-Write-Host "[2/3] Registering 'wacli' in User Environment PATH..." -ForegroundColor Yellow
+Write-Host "[2/3] Registering 'ghostwa' in User Environment PATH..." -ForegroundColor Yellow
 $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($userPath -notlike "*$installDir*") {
     $newPath = "$userPath;$installDir"
@@ -73,11 +76,11 @@ if (!(Test-Path $dataDir)) {
 
 Write-Host "[3/3] Finalizing setup..." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "  ✅ WACLI v2.0 (Stable) Installed Successfully!" -ForegroundColor Green
+Write-Host "  ✅ GhostWA v2.0 (Stable) Installed Successfully!" -ForegroundColor Green
 Write-Host "  ------------------------------------------------------------" -ForegroundColor Gray
-Write-Host "  To start using WACLI v2.0:" -ForegroundColor White
-Write-Host "    1. Type: " -NoNewline; Write-Host "wacli login" -ForegroundColor Cyan -NoNewline; Write-Host " (to scan QR code)"
-Write-Host "    2. Type: " -NoNewline; Write-Host "wacli daemon start" -ForegroundColor Cyan -NoNewline; Write-Host " (to launch background service)"
-Write-Host "    3. Type: " -NoNewline; Write-Host "wacli show" -ForegroundColor Cyan -NoNewline; Write-Host " (to open interactive TUI dashboard)"
+Write-Host "  To start using GhostWA v2.0:" -ForegroundColor White
+Write-Host "    1. Type: " -NoNewline; Write-Host "ghostwa login" -ForegroundColor Cyan -NoNewline; Write-Host " (to scan QR code)"
+Write-Host "    2. Type: " -NoNewline; Write-Host "ghostwa daemon start" -ForegroundColor Cyan -NoNewline; Write-Host " (to launch background service)"
+Write-Host "    3. Type: " -NoNewline; Write-Host "ghostwa show" -ForegroundColor Cyan -NoNewline; Write-Host " (to open interactive TUI dashboard)"
 Write-Host "  ------------------------------------------------------------" -ForegroundColor Gray
 Write-Host ""
