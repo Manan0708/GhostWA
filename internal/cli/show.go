@@ -309,9 +309,34 @@ func (m showModel) View() string {
 	}
 	searchBox := searchStyle.Render(searchContent)
 
+	listHeight := m.height - 10
+	if listHeight < 5 {
+		listHeight = 5
+	}
+
+	// Calculate scrolling window so selected item is always visible
+	startIdx := 0
+	endIdx := len(m.filtered)
+
+	if len(m.filtered) > listHeight {
+		startIdx = m.selectedIdx - (listHeight / 2)
+		if startIdx < 0 {
+			startIdx = 0
+		}
+		endIdx = startIdx + listHeight
+		if endIdx > len(m.filtered) {
+			endIdx = len(m.filtered)
+			startIdx = endIdx - listHeight
+			if startIdx < 0 {
+				startIdx = 0
+			}
+		}
+	}
+
 	// 2. Sidebar Chat List Component
 	var listItems []string
-	for idx, c := range m.filtered {
+	for idx := startIdx; idx < endIdx; idx++ {
+		c := m.filtered[idx]
 		timeStr := ""
 		if !c.LastMessageTime.IsZero() {
 			timeStr = c.LastMessageTime.Local().Format("15:04")
@@ -324,17 +349,27 @@ func (m showModel) View() string {
 				Background(neonPink).
 				Bold(true).
 				Padding(0, 1).
-				Render(fmt.Sprintf("%d new", c.UnreadCount))
+				Render(fmt.Sprintf("%d", c.UnreadCount))
 		}
 
-		nameText := c.Name
-		if len(nameText) > sidebarWidth-12 {
-			nameText = nameText[:sidebarWidth-15] + "..."
+		// Clean rune-safe truncation for contact names
+		runes := []rune(c.Name)
+		maxNameWidth := sidebarWidth - 14
+		if maxNameWidth < 8 {
+			maxNameWidth = 8
 		}
 
-		itemHeader := fmt.Sprintf("%-16s %5s", nameText, timeStr)
+		nameStr := string(runes)
+		if len(runes) > maxNameWidth {
+			nameStr = string(runes[:maxNameWidth-1]) + "…"
+		}
+
+		nameStyle := lipgloss.NewStyle().Width(maxNameWidth).MaxWidth(maxNameWidth).Inline(true).Render(nameStr)
+		timeStyle := lipgloss.NewStyle().Width(5).Align(lipgloss.Right).Render(timeStr)
+
+		itemLine := nameStyle + " " + timeStyle
 		if unreadBadge != "" {
-			itemHeader = fmt.Sprintf("%-12s %s", nameText, unreadBadge)
+			itemLine = nameStyle + " " + unreadBadge
 		}
 
 		if idx == m.selectedIdx && m.focusIdx == 1 {
@@ -342,25 +377,30 @@ func (m showModel) View() string {
 				Foreground(lipgloss.Color("#FFFFFF")).
 				Background(purpleBg).
 				Bold(true).
+				Width(sidebarWidth - 2).
+				MaxHeight(1).
 				Padding(0, 1).
-				Render("▶ "+itemHeader))
+				Render("▶ "+itemLine))
 		} else if idx == m.selectedIdx {
 			listItems = append(listItems, lipgloss.NewStyle().
 				Foreground(purpleBg).
 				Bold(true).
+				Width(sidebarWidth - 2).
+				MaxHeight(1).
 				Padding(0, 1).
-				Render("▶ "+itemHeader))
+				Render("▶ "+itemLine))
 		} else {
 			listItems = append(listItems, lipgloss.NewStyle().
 				Foreground(textColor).
+				Width(sidebarWidth - 2).
+				MaxHeight(1).
 				Padding(0, 1).
-				Render("  "+itemHeader))
+				Render("  "+itemLine))
 		}
 	}
 
-	listHeight := m.height - 10
-	if listHeight < 5 {
-		listHeight = 5
+	if len(listItems) == 0 {
+		listItems = []string{lipgloss.NewStyle().Foreground(mutedText).Padding(0, 1).Render("No active chats.")}
 	}
 
 	chatListBorderColor := mutedText
