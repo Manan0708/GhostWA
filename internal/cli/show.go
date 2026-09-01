@@ -177,12 +177,10 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 
 	case incomingMsg:
-		if msg.Type == "message" || msg.Type == "logged_out" {
-			m.reloadChats()
-			if m.activeChat.JID != "" && (msg.Chat == m.activeChat.JID || (msg.Chat == "" && msg.Sender+"@s.whatsapp.net" == m.activeChat.JID)) {
-				m.loadMessages()
-				_ = m.db.ResetUnreadCount(m.activeChat.JID)
-			}
+		m.reloadChats()
+		if m.activeChat.JID != "" {
+			m.loadMessages()
+			_ = m.db.ResetUnreadCount(m.activeChat.JID)
 		}
 		return m, nil
 	}
@@ -492,6 +490,8 @@ func runShow(stdout, stderr io.Writer) int {
 	}
 	m.reloadChats()
 
+	p := tea.NewProgram(m, tea.WithAltScreen())
+
 	if conn != nil {
 		go func() {
 			reader := bufio.NewReader(conn)
@@ -502,14 +502,12 @@ func runShow(stdout, stderr io.Writer) int {
 				}
 				var evt wadaemon.Event
 				if err := json.Unmarshal(line, &evt); err == nil && evt.Type != "" {
-					p := tea.NewProgram(m)
 					p.Send(incomingMsg(evt))
 				}
 			}
 		}()
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(stderr, "Error running TUI: %v\n", err)
 		return 1
