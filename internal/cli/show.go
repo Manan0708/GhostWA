@@ -134,11 +134,16 @@ func (m showModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.focusIdx == 1 {
 				m.focusIdx = 2
 			} else if m.focusIdx == 2 && m.messageVal != "" && m.activeChat.JID != "" {
-				_ = sendMessageViaDaemon(m.activeChat.JID, m.messageVal)
-
-				myJID := "me@s.whatsapp.net"
-				_ = m.db.UpsertChat(m.activeChat.JID, m.activeChat.Name, time.Now())
-				_ = m.db.SaveMessage("out-"+time.Now().Format("150405"), m.activeChat.JID, myJID, m.messageVal, time.Now(), true)
+				text := strings.TrimSpace(m.messageVal)
+				if strings.HasPrefix(text, "/react ") || strings.HasPrefix(text, "/r ") {
+					parts := strings.SplitN(text, " ", 2)
+					if len(parts) == 2 && len(m.messages) > 0 {
+						lastMsg := m.messages[len(m.messages)-1]
+						_ = sendReactionViaDaemon(m.activeChat.JID, lastMsg.ID, parts[1])
+					}
+				} else {
+					_ = sendMessageViaDaemon(m.activeChat.JID, text)
+				}
 
 				m.messageVal = ""
 				m.loadMessages()
@@ -259,7 +264,7 @@ func (m showModel) View() string {
 		Foreground(lipgloss.Color("#FFFFFF")).
 		Background(purpleBg).
 		Padding(0, 2).
-		Render("⚡ GHOSTWA v2.5.1")
+		Render("⚡ GHOSTWA v2.5.2")
 
 	daemonBadge := lipgloss.NewStyle().
 		Bold(true).
@@ -573,4 +578,22 @@ func runShow(stdout, stderr io.Writer) int {
 	}
 
 	return 0
+}
+
+func sendReactionViaDaemon(toJID, msgID, emoji string) error {
+	conn, err := wadaemon.ConnectOrStartDaemon()
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	req := wadaemon.Request{
+		Type:  "react",
+		To:    toJID,
+		MsgID: msgID,
+		Emoji: emoji,
+	}
+	data, _ := json.Marshal(req)
+	_, err = conn.Write(append(data, '\n'))
+	return err
 }

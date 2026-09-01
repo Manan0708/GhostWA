@@ -24,7 +24,7 @@ import (
 // The return value is the process exit code: 0 means success, non-zero means failure.
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stdout, "GhostWA v2.5.1 — Silent, High-Performance WhatsApp Terminal Client")
+		fmt.Fprintln(stdout, "GhostWA v2.5.2 — Silent, High-Performance WhatsApp Terminal Client")
 		return 0
 	}
 
@@ -66,6 +66,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return runDeleteChat(args[1:], stdout, stderr)
 	case "sync":
 		return runSync(args[1:], stdout, stderr)
+	case "react":
+		return runReact(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command: %s\n", args[0])
 		fmt.Fprintln(stderr, "Run 'ghostwa --help' for usage.")
@@ -74,7 +76,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 }
 
 func printHelp(w io.Writer) {
-	fmt.Fprintln(w, "GhostWA v2.5.1 — Stealthy, High-Performance WhatsApp Terminal Suite")
+	fmt.Fprintln(w, "GhostWA v2.5.2 — Stealthy, High-Performance WhatsApp Terminal Suite")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Usage:")
 	fmt.Fprintln(w, "  ghostwa               Print GhostWA version banner")

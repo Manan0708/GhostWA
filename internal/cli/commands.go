@@ -7,7 +7,7 @@ import (
 
 // runCommands lists all available CLI command operations for the user.
 func runCommands(stdout io.Writer) int {
-	fmt.Fprintln(stdout, "Available GhostWA v2.5.1 Commands:")
+	fmt.Fprintln(stdout, "Available GhostWA v2.5.2 Commands:")
 	fmt.Fprintln(stdout, "──────────────────────────────────────────────────────────────────")
 	fmt.Fprintln(stdout, "  ghostwa login                       Link your phone by scanning a QR code")
 	fmt.Fprintln(stdout, "  ghostwa logout                      Unlink your device and clear session")
