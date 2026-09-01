@@ -4,6 +4,26 @@ WACLI is a high-performance, developer-focused terminal client and user interfac
 
 ---
 
+## ⚡ 1-Line Quick Installation (No Go Required!)
+
+You can install and set up WACLI on any machine with a **single command**. No programming tools or Go installations required!
+
+### Windows (PowerShell)
+Paste this into PowerShell or VS Code Terminal:
+```powershell
+irm https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/install.ps1 | iex
+```
+
+### Linux / macOS (Bash)
+Paste this into Terminal:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Manan0708/Whatsapp-CLI/main/install.sh | sh
+```
+
+Once installed, simply run `wacli login` to scan your QR code and get started!
+
+---
+
 ## Table of Contents
 1. [Architecture & Flow](#architecture--flow)
 2. [Database Schema & Multi-Process Concurrency](#database-schema--multi-process-concurrency)
@@ -14,7 +34,7 @@ WACLI is a high-performance, developer-focused terminal client and user interfac
    * [Automated Media Downloader & Smart Uploader](#automated-media-downloader--smart-uploader)
 4. [TUI Dashboard Architecture (`wacli show`)](#tui-dashboard-architecture-wacli-show)
 5. [CLI & Interactive Command Reference](#cli--interactive-command-reference)
-6. [Installation & Getting Started](#installation--getting-started)
+6. [Manual Build & Installation](#manual-build--installation)
 7. [Troubleshooting & Developer Guidelines](#troubleshooting--developer-guidelines)
 
 ---
@@ -260,36 +280,27 @@ While in an active console stream (`wacli open <name>`), type these commands dir
 
 ---
 
-## Installation & Getting Started
+## Manual Build & Installation
+
+If you are a developer and prefer building from source code:
 
 ### Prerequisites
 * **Go Compiler**: Go 1.20 or newer.
-* **Terminal**: Windows Terminal, PowerShell, CMD, or bash.
 
-### Setup Instructions
-
-1. **Build and Install**:
-   Compile the CLI binary:
+### Build Steps
+1. Clone the repository and compile:
    ```powershell
+   git clone https://github.com/Manan0708/Whatsapp-CLI.git
+   cd Whatsapp-CLI
    go install ./cmd/wacli
    ```
-
-2. **Authenticate Session**:
-   Initiate connection parameters and scan the generated QR code:
+2. Authenticate session:
    ```powershell
    wacli login
    ```
-
-3. **Deploy the Daemon**:
-   Spawn the persistent connection server:
+3. Spawn background service:
    ```powershell
    wacli daemon start
-   ```
-
-4. **Verify Session Integrity**:
-   Verify the background loop is connected and active:
-   ```powershell
-   wacli status
    ```
 
 ---
