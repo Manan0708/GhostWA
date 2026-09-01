@@ -222,9 +222,12 @@ func (s *Server) handleLogout(conn net.Conn) {
 		_ = s.client.GetWhatsmeowClient().Logout(context.Background())
 	}
 	s.client.Disconnect()
-	// Force-wipe session.db file so daemon resets completely to not_logged_in
+	// Force-wipe session.db file and reset messages database so daemon resets completely
 	sessionPath := filepath.Join(s.dataDir, "session.db")
 	_ = os.Remove(sessionPath)
+	if s.store != nil {
+		_ = s.store.ResetDatabase()
+	}
 
 	_ = s.sendResponse(conn, Response{Success: true})
 	log.Println("Device logged out cleanly. Shutting down daemon.")

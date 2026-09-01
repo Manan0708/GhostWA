@@ -277,7 +277,12 @@ func (c *Client) RegisterMessageEventHandler(callback func(MessageEvent)) {
 		case *events.LoggedOut:
 			log.Println("⚠️ Received LoggedOut event: Device was unlinked from WhatsApp mobile app.")
 			home, _ := os.UserHomeDir()
-			_ = os.Remove(filepath.Join(home, ".local", "share", "wacli", "session.db"))
+			dataDir := filepath.Join(home, ".local", "share", "wacli")
+			_ = os.Remove(filepath.Join(dataDir, "session.db"))
+			_ = os.Remove(filepath.Join(dataDir, "messages.db"))
+			if c.store != nil {
+				_ = c.store.ResetDatabase()
+			}
 			callback(MessageEvent{
 				SenderNum:  "SYSTEM",
 				SenderName: "System",

@@ -467,6 +467,12 @@ func runShow(stdout, stderr io.Writer) int {
 		return 1
 	}
 	dataDir := filepath.Join(home, ".local", "share", "wacli")
+	sessionPath := filepath.Join(dataDir, "session.db")
+	if _, err := os.Stat(sessionPath); os.IsNotExist(err) {
+		fmt.Fprintln(stderr, "Not logged in. Please run 'ghostwa login' to link your WhatsApp device.")
+		return 1
+	}
+
 	dbPath := filepath.Join(dataDir, "messages.db")
 
 	s, err := store.NewStore(dbPath)

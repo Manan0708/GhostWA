@@ -27,12 +27,15 @@ func runLogout(stdout, stderr io.Writer) int {
 		_ = json.Unmarshal(line, &resp)
 	}
 
-	// Always force-wipe session.db locally to guarantee complete session reset
+	// Always force-wipe session.db and reset messages database locally to guarantee complete session reset
 	home, _ := os.UserHomeDir()
-	sessionPath := filepath.Join(home, ".local", "share", "wacli", "session.db")
+	dataDir := filepath.Join(home, ".local", "share", "wacli")
+	sessionPath := filepath.Join(dataDir, "session.db")
+	dbPath := filepath.Join(dataDir, "messages.db")
 	_ = os.Remove(sessionPath)
+	_ = os.Remove(dbPath)
 
 	fmt.Fprintln(stdout, "✓ Successfully logged out and unlinked your WhatsApp device.")
-	fmt.Fprintln(stdout, "✓ Session credentials cleared.")
+	fmt.Fprintln(stdout, "✓ Session credentials and local chat history cleared.")
 	return 0
 }

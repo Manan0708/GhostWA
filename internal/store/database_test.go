@@ -94,3 +94,25 @@ func TestStoreUpsertAndSummaries(t *testing.T) {
 		t.Errorf("got unread count %d, want 1", c.UnreadCount)
 	}
 }
+
+func TestResetDatabase(t *testing.T) {
+	s, err := NewStore(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create in-memory store: %v", err)
+	}
+	defer s.Close()
+
+	_ = s.UpsertContact("123@s.whatsapp.net", "User", "123", "User")
+	_ = s.UpsertChat("123@s.whatsapp.net", "User", time.Now())
+	_ = s.SaveMessage("m1", "123@s.whatsapp.net", "123@s.whatsapp.net", "test", time.Now(), false)
+
+	err = s.ResetDatabase()
+	if err != nil {
+		t.Fatalf("failed to reset database: %v", err)
+	}
+
+	chats, _ := s.GetChatList()
+	if len(chats) != 0 {
+		t.Errorf("expected 0 chats after reset, got %d", len(chats))
+	}
+}

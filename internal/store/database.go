@@ -110,3 +110,19 @@ func (s *Store) initSchema() error {
 	_, _ = s.DB.Exec("ALTER TABLE messages ADD COLUMN reaction TEXT DEFAULT '';")
 	return nil
 }
+
+// ResetDatabase truncates all chats, messages, and contacts tables cleanly.
+func (s *Store) ResetDatabase() error {
+	queries := []string{
+		"DELETE FROM messages;",
+		"DELETE FROM chats;",
+		"DELETE FROM contacts;",
+		"VACUUM;",
+	}
+	for _, q := range queries {
+		if _, err := s.DB.Exec(q); err != nil {
+			return err
+		}
+	}
+	return nil
+}
