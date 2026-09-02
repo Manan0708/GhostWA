@@ -10,3 +10,6 @@ media/
 .env
 credentials
 *.db
+GhostWA_Comprehensive_QnA.docx
+GhostWA_Comprehensive_QnA.md
+test.docx
