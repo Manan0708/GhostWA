@@ -135,6 +135,20 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 ## ⚡ 5. Installation
 
+### 🪟 Windows (PowerShell)
+Paste into PowerShell or Terminal:
 ```powershell
 irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install-v2.5.ps1 | iex
+```
+
+### 🐧 Linux & macOS (Bash/Sh)
+Paste into Linux or macOS Terminal:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.sh | sh
+```
+
+### 🐳 Docker Container (Optional)
+If you prefer running inside an isolated Linux container:
+```bash
+docker-compose up -d
 ```

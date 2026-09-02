@@ -23,11 +23,21 @@ Once installed, simply run `wacli login` or `ghostwa login` to scan your QR code
 
 ---
 
-## ⚡ Experimental Version 2.5 (Dev Release)
+## ⚡ GhostWA Version 2.5+ (Latest Stable Release)
 
-For testing experimental features (Phone pairing codes, emoji reactions, call banners, TUI redesign):
+### 🪟 Windows (PowerShell)
 ```powershell
 irm https://raw.githubusercontent.com/Manan0708/GhostWA/main/install-v2.5.ps1 | iex
+```
+
+### 🐧 Linux & macOS (Bash/Sh)
+```bash
+curl -fsSL https://raw.githubusercontent.com/Manan0708/GhostWA/main/install.sh | sh
+```
+
+### 🐳 Docker Container (Optional)
+```bash
+docker-compose up -d
 ```
 
 ---
