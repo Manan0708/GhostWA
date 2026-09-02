@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  ghostwa-daemon:
+    build: .
+    container_name: ghostwa-daemon
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:42069:42069"
+    volumes:
+      - ghostwa_data:/root/.local/share/wacli
+
+volumes:
+  ghostwa_data:
