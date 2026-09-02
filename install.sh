@@ -6,7 +6,7 @@ set -e
 
 echo ""
 echo "  ┌────────────────────────────────────────────────────────┐"
-echo "  │   ⚡ GhostWA v2.5 - Single Command Auto-Installer     │"
+echo "  │   ⚡ GhostWA v2.5.8 - Single Command Auto-Installer     │"
 echo "  └────────────────────────────────────────────────────────┘"
 echo ""
 

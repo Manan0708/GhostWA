@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"syscall"
 	"time"
 )
 
@@ -18,9 +17,7 @@ func StartDaemonProcess() error {
 	}
 
 	cmd := exec.Command(exe, "daemon-run")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		CreationFlags: 0x08000000, // CREATE_NO_WINDOW for Windows background execution
-	}
+	setSysProcAttr(cmd)
 	return cmd.Start()
 }
 
